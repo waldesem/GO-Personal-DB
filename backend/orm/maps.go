@@ -9,9 +9,9 @@ var Regions map[string]string = map[string]string{
 }
 
 var Groups map[string]string = map[string]string{
-	"admins":   "Admins",
-	"staffsec": "StaffSec",
-	"api":      "API",
+	"admins":   "admins",
+	"staffsec": "staffsec",
+	"api":      "api",
 }
 
 var Roles map[string]string = map[string]string{
