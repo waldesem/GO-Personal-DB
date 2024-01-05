@@ -21,3 +21,4 @@
 go.work
 
 StaffSec2.code-workspace
+.env
