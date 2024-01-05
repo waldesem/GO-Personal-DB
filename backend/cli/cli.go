@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,26 +8,42 @@ import (
 
 	"backend/orm"
 
-	"github.com/urfave/cli/v3"
+	"github.com/urfave/cli/v2"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
-	cmd := &cli.Command{
-		Name:  "create",
-		Usage: "create new project",
-		Flags: []cli.Flag{},
-		Action: func(_ context.Context, cmd *cli.Command) error {
-			createDefault()
-			return nil
+	app := &cli.App{
+		Name:  "staffsec",
+		Usage: "Command line interface for StaffSec",
+		Commands: []*cli.Command{
+			{
+				Name:  "create",
+				Usage: "Create database and default data",
+				Action: func(c *cli.Context) error {
+					createDefault()
+					return nil
+				},
+			},
+			{
+				Name:  "test",
+				Usage: "Test",
+				Action: func(c *cli.Context) error {
+					log.Println("Test")
+					return nil
+				},
+			},
 		},
 	}
 
-	cmd.Run(context.Background(), os.Args)
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func createDefault() {
-	basePath := GetBasePath()
+	basePath := MakeBasePath()
 	_, err := os.Stat(basePath)
 	if err != nil {
 		os.Mkdir(basePath, 0755)
@@ -82,16 +96,10 @@ func createDefault() {
 			NameRole: role,
 		})
 	}
-	fmt.Println(orm.Category.GetID(orm.Category{}, orm.Categories["candidate"]))
-
-	pswd, err := generateBcryptHash("88888888")
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	user := orm.User{
 		UserName: "superadmin",
-		Password: pswd,
+		Password: generateBcryptHash("88888888"),
 	}
 	roles := []orm.Role{}
 	db.Where("name_role = ?", "admin").Find(&roles)
@@ -108,7 +116,7 @@ func createDefault() {
 		RegionID:         orm.Region.GetID(orm.Region{}, orm.Regions["MAIN_OFFICE"]),
 		FullName:         "Бендер Остап Сулеман",
 		PreviousFullName: "Ильф и Петров",
-		BirthDate:        time.Now(),
+		BirthDate:        time.Now().Format("2006-01-02"),
 		BirthPlace:       "г.Нью-Васюки",
 		Citizen:          "Россия",
 		ExCitizen:        "Турция",
@@ -123,15 +131,15 @@ func createDefault() {
 	log.Println("done")
 }
 
-func generateBcryptHash(password string) ([]byte, error) {
+func generateBcryptHash(password string) []byte {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
-	return hashedPassword, nil
+	return hashedPassword
 }
 
-func GetBasePath() string {
+func MakeBasePath() string {
 	cur, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)

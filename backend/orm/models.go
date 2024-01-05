@@ -105,6 +105,8 @@ type Category struct {
 
 func (category Category) GetID(name string) uint {
 	categoryId := uint(0)
+	db := OpenDb()
+	db.Where(Category{NameCategory: name}).First(&category)
 	if category.NameCategory == name {
 		categoryId = category.ID
 	}
@@ -120,6 +122,8 @@ type Status struct {
 
 func (status Status) GetID(name string) uint {
 	statusId := uint(0)
+	db := OpenDb()
+	db.Where(Status{NameStatus: name}).First(&status)
 	if status.NameStatus == name {
 		statusId = status.ID
 	}
@@ -135,6 +139,8 @@ type Region struct {
 
 func (region Region) GetID(name string) uint {
 	regionId := uint(0)
+	db := OpenDb()
+	db.Where(Region{NameRegion: name}).First(&region)
 	if region.NameRegion == name {
 		regionId = region.ID
 	}
@@ -148,7 +154,7 @@ type Person struct {
 	RegionID         uint      `json:"region_id" serialize:"json"`
 	FullName         string    `gorm:"not null; index" json:"fullname" serialize:"json"`
 	PreviousFullName string    `json:"previous" serialize:"json"`
-	BirthDate        time.Time `gorm:"not null" json:"birthday" serialize:"json"`
+	BirthDate        string    `gorm:"not null" json:"birthday" serialize:"json"`
 	BirthPlace       string    `json:"birth_place" serialize:"json"`
 	Citizen          string    `gorm:"size(256)" json:"country" serialize:"json"`
 	ExCitizen        string    `gorm:"size(256)" json:"ex_citizen" serialize:"json"`

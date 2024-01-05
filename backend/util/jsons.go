@@ -7,11 +7,9 @@ import (
 	"io"
 	"log"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
-	//_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -22,9 +20,6 @@ const (
 	statusId   = 9
 	regionId   = 1
 )
-
-var basePath string = filepath.Join(getCurrentPath(), "..")
-var databaseURI string = filepath.Join(basePath, database)
 
 type NameChange struct {
 	Reason                   string `json:"reason"`
@@ -109,7 +104,7 @@ type Person struct {
 }
 
 func jsonParse(jsonPath string) {
-	db, err := sql.Open("sqlite3", databaseURI)
+	db, err := sql.Open("sqlite3", "/persons.db")
 	if err != nil {
 		log.Fatal(err)
 	}
