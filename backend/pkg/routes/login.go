@@ -1,96 +1,17 @@
 package routes
 
 import (
-	"encoding/json"
-	"time"
+	"github.com/gofiber/fiber/v2"
 
-	"golang.org/x/crypto/bcrypt"
-
-	orm "backend/orm"
-	"backend/platform/database"
+	"backend/app/controllers"
+	"backend/pkg/middlewares"
 )
 
-func HandleLoginGet(resp string) ([]byte, error) {
-	db := database.OpenDb()
-	var user orm.User
-	db.
-		Where("full_name LIKE ?", "%"+resp+"%").
-		First(&user)
-	return json.Marshal(user)
-}
+func LoginRoutes(a *fiber.App) {
 
-func HandleLoginPost(userdata map[string]string) ([]byte, error) {
-	db := database.OpenDb()
-	var user orm.User
-	db.
-		Where("user_name LIKE ?", "%"+userdata["username"]+"%").
-		First(&user)
-	if user.ID != 0 && !user.Blocked {
-		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(userdata["password"])); err == nil {
-			deltaChange := time.Since(user.CreatedAt)
-			if user.UpdatedAt.IsZero() && deltaChange.Hours() < 365*24 {
-				user.LastLogin = time.Now()
-				user.Attempt = 0
-				db.Save(&user)
-				result := map[string]interface{}{
-					"message":       "Authenticated",
-					"access_token":  "createAccessToken(user.UserName)",
-					"refresh_token": "createRefreshToken(user.UserName)",
-				}
-				return json.Marshal(result)
-			}
-			result := map[string]interface{}{
-				"message": "Expired",
-			}
-			return json.Marshal(result)
-		} else {
-			if user.Attempt < 9 {
-				user.Attempt++
-			} else {
-				user.Blocked = true
-			}
-			db.Save(&user)
-		}
-	}
-	result := map[string]interface{}{
-		"message": "Denied",
-	}
-	return json.Marshal(result)
-}
-
-func HandleLoginPatch(userdata map[string]string) ([]byte, error) {
-	db := database.OpenDb()
-	var user orm.User
-	db.
-		Where("user_name LIKE ?", "%"+userdata["username"]+"%").
-		First(&user)
-	if user.ID != 0 && !user.Blocked {
-		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(userdata["password"])); err == nil {
-			user.Password, err = bcrypt.GenerateFromPassword([]byte(userdata["new_pswd"]), bcrypt.DefaultCost)
-			if err != nil {
-				result := map[string]interface{}{
-					"message": "Denied",
-				}
-				return json.Marshal(result)
-			}
-			db.Save(&user)
-			result := map[string]interface{}{
-				"message": "Authenticated",
-			}
-			return json.Marshal(result)
-		}
-	}
-	result := map[string]interface{}{
-		"message": "Denied",
-	}
-	return json.Marshal(result)
-}
-
-func HandleLoginDelete(resp string) ([]byte, error) {
-	db := database.OpenDb()
-	var user []orm.User
-	db.
-		Where("full_name LIKE ?", "%"+resp+"%").
-		First(&user)
-	return json.Marshal(user)
+	a.Get("/login", middlewares.JWTProtected(), controllers.GetLogin)
+	a.Post("/login", controllers.PostLogin)
+	a.Patch("/login", controllers.PatchLogin)
+	a.Delete("/login", middlewares.JWTProtected(), controllers.DeleteLogin)
+	a.Post("/refresh", middlewares.JWTProtected(), controllers.RefreshToken)
 }

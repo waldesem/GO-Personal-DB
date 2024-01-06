@@ -1,10 +1,10 @@
 SERVER_READ_TIMEOUT=60
 
-HOST="localhost"
-USER="flask"
-PASSWORD="flask"
+DHOST="localhost"
+DUSER="flask"
+DPASSWORD="flask"
 DBNAME="personal"
-PORT="5432"
+DPORT="5432"
 
 SECRET_KEY='SECRET_KEY'
 JWT_SECRET_KEY='JWT_SECRET_KEY'

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/urfave/cli/v2"
-	"golang.org/x/crypto/bcrypt"
 
 	"backend/app/models"
 	"backend/pkg/utils"
@@ -45,7 +44,7 @@ func main() {
 }
 
 func createDefault() {
-	basePath := MakeBasePath()
+	basePath := utils.MakeBasePath()
 	_, err := os.Stat(basePath)
 	if err != nil {
 		os.Mkdir(basePath, 0755)
@@ -101,7 +100,7 @@ func createDefault() {
 
 	user := models.User{
 		UserName: "superadmin",
-		Password: generateBcryptHash("88888888"),
+		Password: utils.GeneratePassword("88888888"),
 	}
 	roles := []models.Role{}
 	db.Where("name_role = ?", "admin").Find(&roles)
@@ -131,20 +130,4 @@ func createDefault() {
 		StatusID:         models.Status.GetID(models.Status{}, utils.Statuses["new"]),
 	})
 	log.Println("done")
-}
-
-func generateBcryptHash(password string) []byte {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return hashedPassword
-}
-
-func MakeBasePath() string {
-	cur, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return filepath.Join(cur, "..", "..", "..", "persons")
 }

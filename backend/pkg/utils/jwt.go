@@ -20,15 +20,15 @@ type Tokens struct {
 	Refresh string
 }
 
-// GenerateNewTokens func for generate a new Access & Refresh tokens.
-func GenerateNewTokens(id string, credentials []string) (*Tokens, error) {
+func GenerateNewTokens(id string) (*Tokens, error) {
 	// Generate JWT Access token.
-	accessToken, err := generateNewAccessToken(id, credentials)
+	accessToken, err := generateNewAccessToken(id)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken, err := generateNewRefreshToken()
+	// Generate JWT Refresh token.
+	refreshToken, err := GenerateNewRefreshToken()
 	if err != nil {
 		// Return token generation error.
 		return nil, err
@@ -40,27 +40,17 @@ func GenerateNewTokens(id string, credentials []string) (*Tokens, error) {
 	}, nil
 }
 
-func generateNewAccessToken(id string, credentials []string) (string, error) {
+func generateNewAccessToken(id string) (string, error) {
 	// Set secret key from .env file.
 	secret := os.Getenv("JWT_SECRET_KEY")
-
+	fmt.Println(secret)
 	// Set expires minutes count for secret key from .env file.
 	minutesCount, _ := strconv.Atoi(os.Getenv("JWT_SECRET_KEY_EXPIRE_MINUTES_COUNT"))
 
 	// Create a new claims.
 	claims := jwt.MapClaims{}
-
-	// Set public claims:
 	claims["id"] = id
 	claims["expires"] = time.Now().Add(time.Minute * time.Duration(minutesCount)).Unix()
-	claims["book:create"] = false
-	claims["book:update"] = false
-	claims["book:delete"] = false
-
-	// Set private token credentials:
-	for _, credential := range credentials {
-		claims[credential] = true
-	}
 
 	// Create a new JWT access token with claims.
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -68,14 +58,12 @@ func generateNewAccessToken(id string, credentials []string) (string, error) {
 	// Generate token.
 	t, err := token.SignedString([]byte(secret))
 	if err != nil {
-		// Return error, it JWT token generation failed.
 		return "", err
 	}
-
 	return t, nil
 }
 
-func generateNewRefreshToken() (string, error) {
+func GenerateNewRefreshToken() (string, error) {
 	// Create a new SHA256 hash.
 	hash := sha256.New()
 
@@ -93,7 +81,7 @@ func generateNewRefreshToken() (string, error) {
 	// Set expiration time.
 	expireTime := fmt.Sprint(time.Now().Add(time.Hour * time.Duration(hoursCount)).Unix())
 
-	// Create a new refresh token (sha256 string with salt + expire time).
+	// Set refresh token string.
 	t := hex.EncodeToString(hash.Sum(nil)) + "." + expireTime
 
 	return t, nil
@@ -106,9 +94,8 @@ func ParseRefreshToken(refreshToken string) (int64, error) {
 
 // TokenMetadata struct to describe metadata in JWT.
 type TokenMetadata struct {
-	UserID      uuid.UUID
-	Credentials map[string]bool
-	Expires     int64
+	UserID  uuid.UUID
+	Expires int64
 }
 
 // ExtractTokenMetadata func to extract metadata from JWT.
@@ -130,17 +117,9 @@ func ExtractTokenMetadata(c *fiber.Ctx) (*TokenMetadata, error) {
 		// Expires time.
 		expires := int64(claims["expires"].(float64))
 
-		// User credentials.
-		credentials := map[string]bool{
-			"book:create": claims["book:create"].(bool),
-			"book:update": claims["book:update"].(bool),
-			"book:delete": claims["book:delete"].(bool),
-		}
-
 		return &TokenMetadata{
-			UserID:      userID,
-			Credentials: credentials,
-			Expires:     expires,
+			UserID:  userID,
+			Expires: expires,
 		}, nil
 	}
 

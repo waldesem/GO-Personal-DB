@@ -11,15 +11,17 @@ import (
 
 func OpenDb() *gorm.DB {
 
+	host := os.Getenv("DBHOST")
+	usr := os.Getenv("DBUSER")
+	pwd := os.Getenv("DBPASSWORD")
+	name := os.Getenv("DBNAME")
+	port := os.Getenv("DBPORT")
+
 	var dsn = fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		os.Getenv("HOST"),
-		os.Getenv("USER"),
-		os.Getenv("PASSWORD"),
-		os.Getenv("DNAME"),
-		os.Getenv("PORT"),
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", host, usr, pwd, name, port,
 	)
-	var db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
