@@ -1,9 +1,11 @@
-package internal
+package routes
 
 import (
-	orm "backend/orm"
 	"encoding/json"
 	"strconv"
+
+	orm "backend/orm"
+	"backend/platform/database"
 )
 
 func HandleIndex(item string, page string, resp string) ([]byte, bool, bool) {
@@ -12,7 +14,7 @@ func HandleIndex(item string, page string, resp string) ([]byte, bool, bool) {
 		intPage = 1
 	}
 
-	db := orm.OpenDb()
+	db := database.OpenDb()
 	var persons []orm.Person
 	var pagination = 16
 	var hasPrev, hasNext bool

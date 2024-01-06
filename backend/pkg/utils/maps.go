@@ -1,4 +1,4 @@
-package orm
+package utils
 
 var Regions map[string]string = map[string]string{
 	"MAIN_OFFICE":  "Главный офис",

@@ -6,10 +6,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"backend/orm"
-
 	"github.com/urfave/cli/v2"
 	"golang.org/x/crypto/bcrypt"
+
+	"backend/app/models"
+	"backend/pkg/utils"
+	"backend/platform/database"
 )
 
 func main() {
@@ -58,62 +60,62 @@ func createDefault() {
 		}
 	}
 
-	db := orm.OpenDb()
+	db := database.OpenDb()
 	err = db.AutoMigrate(
-		&orm.Group{}, &orm.Role{}, &orm.User{}, &orm.Message{},
-		&orm.Region{}, &orm.Category{}, &orm.Status{},
-		&orm.Person{}, &orm.Document{}, &orm.Address{}, &orm.Workplace{},
-		&orm.Contact{}, &orm.Staff{}, &orm.Affilation{}, &orm.Relation{},
-		&orm.Conclusion{}, &orm.Check{}, &orm.Poligraf{},
-		&orm.Investigation{}, &orm.Inquiry{}, &orm.Connection{},
+		&models.Group{}, &models.Role{}, &models.User{}, &models.Message{},
+		&models.Region{}, &models.Category{}, &models.Status{},
+		&models.Person{}, &models.Document{}, &models.Address{}, &models.Workplace{},
+		&models.Contact{}, &models.Staff{}, &models.Affilation{}, &models.Relation{},
+		&models.Conclusion{}, &models.Check{}, &models.Poligraf{},
+		&models.Investigation{}, &models.Inquiry{}, &models.Connection{},
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, region := range orm.Regions {
-		db.Create(&orm.Region{
+	for _, region := range utils.Regions {
+		db.Create(&models.Region{
 			NameRegion: region,
 		})
 	}
-	for _, status := range orm.Statuses {
-		db.Create(&orm.Status{
+	for _, status := range utils.Statuses {
+		db.Create(&models.Status{
 			NameStatus: status,
 		})
 	}
-	for _, category := range orm.Categories {
-		db.Create(&orm.Category{
+	for _, category := range utils.Categories {
+		db.Create(&models.Category{
 			NameCategory: category,
 		})
 	}
-	for _, group := range orm.Groups {
-		db.Create(&orm.Group{
+	for _, group := range utils.Groups {
+		db.Create(&models.Group{
 			NameGroup: group,
 		})
 	}
-	for _, role := range orm.Roles {
-		db.Create(&orm.Role{
+	for _, role := range utils.Roles {
+		db.Create(&models.Role{
 			NameRole: role,
 		})
 	}
 
-	user := orm.User{
+	user := models.User{
 		UserName: "superadmin",
 		Password: generateBcryptHash("88888888"),
 	}
-	roles := []orm.Role{}
+	roles := []models.Role{}
 	db.Where("name_role = ?", "admin").Find(&roles)
 	user.Roles = roles
 
-	groups := []orm.Group{}
+	groups := []models.Group{}
 	db.Where("name_group = ?", "admins").Find(&groups)
 	user.Groups = groups
 
 	db.Create(&user)
 
-	db.Create(&orm.Person{
-		CategoryID:       orm.Category.GetID(orm.Category{}, orm.Categories["candidate"]),
-		RegionID:         orm.Region.GetID(orm.Region{}, orm.Regions["MAIN_OFFICE"]),
+	db.Create(&models.Person{
+		CategoryID:       models.Category.GetID(models.Category{}, utils.Categories["candidate"]),
+		RegionID:         models.Region.GetID(models.Region{}, utils.Regions["MAIN_OFFICE"]),
 		FullName:         "Бендер Остап Сулеман",
 		PreviousFullName: "Ильф и Петров",
 		BirthDate:        time.Now().Format("2006-01-02"),
@@ -126,7 +128,7 @@ func createDefault() {
 		MaritalStatus:    "женат",
 		AdditionalInfo:   "Холодный философ и свободный художник",
 		PathToDocs:       basePath,
-		StatusID:         orm.Status.GetID(orm.Status{}, orm.Statuses["new"]),
+		StatusID:         models.Status.GetID(models.Status{}, utils.Statuses["new"]),
 	})
 	log.Println("done")
 }

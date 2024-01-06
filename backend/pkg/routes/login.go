@@ -1,15 +1,17 @@
-package internal
+package routes
 
 import (
-	orm "backend/orm"
 	"encoding/json"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+
+	orm "backend/orm"
+	"backend/platform/database"
 )
 
 func HandleLoginGet(resp string) ([]byte, error) {
-	db := orm.OpenDb()
+	db := database.OpenDb()
 	var user orm.User
 	db.
 		Where("full_name LIKE ?", "%"+resp+"%").
@@ -18,7 +20,7 @@ func HandleLoginGet(resp string) ([]byte, error) {
 }
 
 func HandleLoginPost(userdata map[string]string) ([]byte, error) {
-	db := orm.OpenDb()
+	db := database.OpenDb()
 	var user orm.User
 	db.
 		Where("user_name LIKE ?", "%"+userdata["username"]+"%").
@@ -57,7 +59,7 @@ func HandleLoginPost(userdata map[string]string) ([]byte, error) {
 }
 
 func HandleLoginPatch(userdata map[string]string) ([]byte, error) {
-	db := orm.OpenDb()
+	db := database.OpenDb()
 	var user orm.User
 	db.
 		Where("user_name LIKE ?", "%"+userdata["username"]+"%").
@@ -85,7 +87,7 @@ func HandleLoginPatch(userdata map[string]string) ([]byte, error) {
 }
 
 func HandleLoginDelete(resp string) ([]byte, error) {
-	db := orm.OpenDb()
+	db := database.OpenDb()
 	var user []orm.User
 	db.
 		Where("full_name LIKE ?", "%"+resp+"%").
