@@ -1,9 +1,7 @@
 package utils
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
+	"encoding/json"
 	"os"
 	"strconv"
 	"strings"
@@ -20,15 +18,15 @@ type Tokens struct {
 	Refresh string
 }
 
-func GenerateNewTokens(id string) (*Tokens, error) {
+func GenerateNewTokens(id string, roles []string, groups []string) (*Tokens, error) {
 	// Generate JWT Access token.
-	accessToken, err := generateNewAccessToken(id)
+	accessToken, err := GenerateNewAccessToken(id, roles, groups)
 	if err != nil {
 		return nil, err
 	}
 
 	// Generate JWT Refresh token.
-	refreshToken, err := GenerateNewRefreshToken()
+	refreshToken, err := GenerateNewRefreshToken(id)
 	if err != nil {
 		// Return token generation error.
 		return nil, err
@@ -40,16 +38,17 @@ func GenerateNewTokens(id string) (*Tokens, error) {
 	}, nil
 }
 
-func generateNewAccessToken(id string) (string, error) {
+func GenerateNewAccessToken(id string, roles []string, groups []string) (string, error) {
 	// Set secret key from .env file.
 	secret := os.Getenv("JWT_SECRET_KEY")
-	fmt.Println(secret)
 	// Set expires minutes count for secret key from .env file.
 	minutesCount, _ := strconv.Atoi(os.Getenv("JWT_SECRET_KEY_EXPIRE_MINUTES_COUNT"))
 
 	// Create a new claims.
 	claims := jwt.MapClaims{}
 	claims["id"] = id
+	claims["roles"] = roles
+	claims["groups"] = groups
 	claims["expires"] = time.Now().Add(time.Minute * time.Duration(minutesCount)).Unix()
 
 	// Create a new JWT access token with claims.
@@ -63,39 +62,80 @@ func generateNewAccessToken(id string) (string, error) {
 	return t, nil
 }
 
-func GenerateNewRefreshToken() (string, error) {
-	// Create a new SHA256 hash.
-	hash := sha256.New()
+func GenerateNewRefreshToken(id string) (string, error) {
+	secret := os.Getenv("JWT_REFRESH_KEY")
+	minutesCount, _ := strconv.Atoi(os.Getenv("JWT_REFRESH_KEY_EXPIRE_HOURS_COUNT"))
 
-	// Create a new now date and time string with salt.
-	refresh := os.Getenv("JWT_REFRESH_KEY") + time.Now().String()
+	claims := jwt.MapClaims{}
+	claims["id"] = id
+	claims["expires"] = time.Now().Add(time.Minute * time.Duration(minutesCount)).Unix()
 
-	_, err := hash.Write([]byte(refresh))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	t, err := token.SignedString([]byte(secret))
 	if err != nil {
 		return "", err
 	}
-
-	// Set expires hours count for refresh key from .env file.
-	hoursCount, _ := strconv.Atoi(os.Getenv("JWT_REFRESH_KEY_EXPIRE_HOURS_COUNT"))
-
-	// Set expiration time.
-	expireTime := fmt.Sprint(time.Now().Add(time.Hour * time.Duration(hoursCount)).Unix())
-
-	// Set refresh token string.
-	t := hex.EncodeToString(hash.Sum(nil)) + "." + expireTime
-
 	return t, nil
-}
-
-// ParseRefreshToken func for parse second argument from refresh token.
-func ParseRefreshToken(refreshToken string) (int64, error) {
-	return strconv.ParseInt(strings.Split(refreshToken, ".")[1], 0, 64)
 }
 
 // TokenMetadata struct to describe metadata in JWT.
 type TokenMetadata struct {
 	UserID  uuid.UUID
+	Roles   []string
+	Groups  []string
 	Expires int64
+}
+
+// ApplyToken checks if the provided roles and groups are present in the token metadata.
+func ApplyToken(c *fiber.Ctx, roles []string, groups []string) (uuid.UUID, error) {
+	TokenMetadata, err := ExtractTokenMetadata(c)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	// Set expiration time from JWT data of current book.
+	expires := TokenMetadata.Expires
+	if time.Now().Unix() > expires {
+		return uuid.Nil, c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": true,
+			"msg":   "unauthorized, check expiration time of your token",
+		})
+	}
+
+	hasGroup := false
+	hasRole := false
+
+	if len(TokenMetadata.Groups) == 0 {
+		hasGroup = true
+	} else {
+		for _, role := range roles {
+			for _, r := range TokenMetadata.Roles {
+				if r == role {
+					hasRole = true
+					break
+				}
+			}
+		}
+	}
+
+	if len(TokenMetadata.Groups) == 0 {
+		hasGroup = true
+	} else {
+		for _, group := range groups {
+			for _, g := range TokenMetadata.Groups {
+				if g == group {
+					hasGroup = true
+					break
+				}
+			}
+		}
+	}
+
+	if hasGroup && hasRole {
+		return TokenMetadata.UserID, nil
+	} else {
+		return uuid.Nil, nil
+	}
 }
 
 // ExtractTokenMetadata func to extract metadata from JWT.
@@ -113,17 +153,37 @@ func ExtractTokenMetadata(c *fiber.Ctx) (*TokenMetadata, error) {
 		if err != nil {
 			return nil, err
 		}
+		roles, err := json.Marshal(claims["roles"])
+		if err != nil {
+			return nil, err
+		}
+		groups, err := json.Marshal(claims["groups"])
+		if err != nil {
+			return nil, err
+		}
 
 		// Expires time.
 		expires := int64(claims["expires"].(float64))
 
 		return &TokenMetadata{
 			UserID:  userID,
+			Roles:   strings.Split(string(roles), ","),
+			Groups:  strings.Split(string(groups), ","),
 			Expires: expires,
 		}, nil
 	}
 
 	return nil, err
+}
+
+func verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
+	tokenString := extractToken(c)
+
+	token, err := jwt.Parse(tokenString, jwtKeyFunc)
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
 }
 
 func extractToken(c *fiber.Ctx) string {
@@ -136,17 +196,6 @@ func extractToken(c *fiber.Ctx) string {
 	}
 
 	return ""
-}
-
-func verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
-	tokenString := extractToken(c)
-
-	token, err := jwt.Parse(tokenString, jwtKeyFunc)
-	if err != nil {
-		return nil, err
-	}
-
-	return token, nil
 }
 
 func jwtKeyFunc(token *jwt.Token) (interface{}, error) {

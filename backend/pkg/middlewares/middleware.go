@@ -38,7 +38,6 @@ func jwtError(c *fiber.Ctx, err error) error {
 			"msg":   err.Error(),
 		})
 	}
-
 	// Return status 401 and failed authentication error.
 	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 		"error": true,

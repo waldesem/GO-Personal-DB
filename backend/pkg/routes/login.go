@@ -13,5 +13,5 @@ func LoginRoutes(a *fiber.App) {
 	a.Post("/login", controllers.PostLogin)
 	a.Patch("/login", controllers.PatchLogin)
 	a.Delete("/login", middlewares.JWTProtected(), controllers.DeleteLogin)
-	a.Post("/refresh", middlewares.JWTProtected(), controllers.RefreshToken)
+	a.Post("/refresh", controllers.RefreshToken)
 }

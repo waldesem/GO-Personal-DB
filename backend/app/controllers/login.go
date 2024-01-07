@@ -13,27 +13,17 @@ import (
 )
 
 func GetLogin(c *fiber.Ctx) error {
-	claims, err := utils.ExtractTokenMetadata(c)
+	userId, err := utils.ApplyToken(c, []string{}, []string{})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": true,
 			"msg":   err.Error(),
 		})
 	}
-	// Set expiration time from JWT data of current book.
-	expires := claims.Expires
-
-	// Checking, if now time greather than expiration from JWT.
-	if time.Now().Unix() > expires {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": true,
-			"msg":   "unauthorized, check expiration time of your token",
-		})
-	}
 
 	db := database.OpenDb()
 	var user models.User
-	db.First(&user, claims.UserID)
+	db.First(&user, userId)
 
 	result, err := json.Marshal(user)
 	if err != nil {
@@ -68,7 +58,17 @@ func PostLogin(c *fiber.Ctx) error {
 				user.Attempt = 0
 				db.Save(&user)
 
-				tokens, err := utils.GenerateNewTokens(string(rune(user.ID)))
+				var roles []string
+				for _, role := range user.Roles {
+					roles = append(roles, role.NameRole)
+				}
+
+				var groups []string
+				for _, group := range user.Groups {
+					groups = append(groups, group.NameGroup)
+				}
+
+				tokens, err := utils.GenerateNewTokens(string(rune(user.ID)), roles, groups)
 				if err != nil {
 					result = map[string]interface{}{
 						"message": "Denied",
@@ -147,9 +147,34 @@ func DeleteLogin(c *fiber.Ctx) error {
 
 func RefreshToken(c *fiber.Ctx) error {
 	// Get refresh token from storage.
-	refreshToken, err := utils.GenerateNewRefreshToken()
+	claims, err := utils.ExtractTokenMetadata(c)
 	if err != nil {
 		return c.Status(500).JSON(err)
 	}
-	return c.Status(200).JSON(refreshToken)
+
+	db := database.OpenDb()
+	var user models.User
+	db.First(&user, claims.UserID)
+
+	var roles []string
+	var groups []string
+
+	if user.ID != 0 && !user.Blocked {
+		for _, role := range user.Roles {
+			roles = append(roles, role.NameRole)
+		}
+
+		for _, group := range user.Groups {
+			groups = append(groups, group.NameGroup)
+		}
+
+		refreshToken, err := utils.GenerateNewAccessToken(
+			claims.UserID.String(), roles, groups,
+		)
+		if err != nil {
+			return c.Status(500).JSON(err)
+		}
+		return c.Status(200).JSON(refreshToken)
+	}
+	return c.Status(401).JSON("unauthorized")
 }

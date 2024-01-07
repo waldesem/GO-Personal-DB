@@ -17,6 +17,8 @@ type Group struct {
 
 func (group Group) GetID(name string) uint {
 	groupId := uint(0)
+	db := database.OpenDb()
+	db.Where(Group{NameGroup: name}).First(&group)
 	if group.NameGroup == name {
 		groupId = group.ID
 	}
@@ -32,6 +34,8 @@ type Role struct {
 
 func (role Role) GetID(name string) uint {
 	roleId := uint(0)
+	db := database.OpenDb()
+	db.Where(Role{NameRole: name}).First(&role)
 	if role.NameRole == name {
 		roleId = role.ID
 	}
