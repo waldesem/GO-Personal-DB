@@ -33,7 +33,7 @@ func main() {
 
 	// Routes.
 	routes.LoginRoutes(app)
-	// routes.AdmiRoutes(app)
+	routes.AdminRoutes(app)
 	routes.PublicRoutes(app)
 	routes.NotFoundRoute(app)
 

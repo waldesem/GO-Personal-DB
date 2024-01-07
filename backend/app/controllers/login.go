@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -13,19 +14,25 @@ import (
 )
 
 func GetLogin(c *fiber.Ctx) error {
-	userId, err := utils.ApplyToken(c, []string{}, []string{})
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": true,
-			"msg":   err.Error(),
-		})
+	userId, err := utils.RolesGroupsInToken(c, []string{"admin"}, []string{"admin"})
+
+	if err != nil || userId == 0 {
+		errMsg := "Unauthorized"
+		if err != nil {
+			errMsg = err.Error()
+		}
+		return c.Status(401).JSON(errMsg)
 	}
 
 	db := database.OpenDb()
 	var user models.User
-	db.First(&user, userId)
+	db.
+		Preload("Roles").
+		Preload("Groups").
+		First(&user, userId)
 
 	result, err := json.Marshal(user)
+	fmt.Println(string(result))
 	if err != nil {
 		return c.Status(500).JSON(err)
 	}
@@ -46,6 +53,8 @@ func PostLogin(c *fiber.Ctx) error {
 	var result map[string]interface{}
 
 	db.
+		Preload("Roles").
+		Preload("Groups").
 		Where("user_name LIKE ?", "%"+userdata.UserName+"%").
 		First(&user)
 
@@ -68,7 +77,7 @@ func PostLogin(c *fiber.Ctx) error {
 					groups = append(groups, group.NameGroup)
 				}
 
-				tokens, err := utils.GenerateNewTokens(string(rune(user.ID)), roles, groups)
+				tokens, err := utils.GenerateNewTokens(user.ID, roles, groups)
 				if err != nil {
 					result = map[string]interface{}{
 						"message": "Denied",
@@ -138,11 +147,14 @@ func PatchLogin(c *fiber.Ctx) error {
 	return c.Status(200).JSON(result)
 }
 
+// DeleteLogin deletes the login for a given user.
 func DeleteLogin(c *fiber.Ctx) error {
-	// Delete token from storage.
-	c.Locals("access_token", nil)
-	c.Locals("refresh_token", nil)
-	return nil
+	token := c.Get("Authorization")
+	err := database.RedisConnection().Set(c.Context(), token, true, time.Hour).Err()
+	if err != nil {
+		return err
+	}
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func RefreshToken(c *fiber.Ctx) error {
@@ -154,7 +166,10 @@ func RefreshToken(c *fiber.Ctx) error {
 
 	db := database.OpenDb()
 	var user models.User
-	db.First(&user, claims.UserID)
+	db.
+		Preload("Roles").
+		Preload("Groups").
+		First(&user, claims.UserID)
 
 	var roles []string
 	var groups []string
@@ -169,7 +184,7 @@ func RefreshToken(c *fiber.Ctx) error {
 		}
 
 		refreshToken, err := utils.GenerateNewAccessToken(
-			claims.UserID.String(), roles, groups,
+			user.ID, roles, groups,
 		)
 		if err != nil {
 			return c.Status(500).JSON(err)

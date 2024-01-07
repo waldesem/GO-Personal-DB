@@ -1,15 +1,17 @@
 package utils
 
 import (
-	"encoding/json"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
+
+	"backend/platform/database"
 )
 
 // Tokens struct to describe tokens object.
@@ -18,7 +20,7 @@ type Tokens struct {
 	Refresh string
 }
 
-func GenerateNewTokens(id string, roles []string, groups []string) (*Tokens, error) {
+func GenerateNewTokens(id uint, roles []string, groups []string) (*Tokens, error) {
 	// Generate JWT Access token.
 	accessToken, err := GenerateNewAccessToken(id, roles, groups)
 	if err != nil {
@@ -38,11 +40,12 @@ func GenerateNewTokens(id string, roles []string, groups []string) (*Tokens, err
 	}, nil
 }
 
-func GenerateNewAccessToken(id string, roles []string, groups []string) (string, error) {
+func GenerateNewAccessToken(id uint, roles []string, groups []string) (string, error) {
 	// Set secret key from .env file.
 	secret := os.Getenv("JWT_SECRET_KEY")
 	// Set expires minutes count for secret key from .env file.
 	minutesCount, _ := strconv.Atoi(os.Getenv("JWT_SECRET_KEY_EXPIRE_MINUTES_COUNT"))
+	fmt.Println(minutesCount)
 
 	// Create a new claims.
 	claims := jwt.MapClaims{}
@@ -62,7 +65,7 @@ func GenerateNewAccessToken(id string, roles []string, groups []string) (string,
 	return t, nil
 }
 
-func GenerateNewRefreshToken(id string) (string, error) {
+func GenerateNewRefreshToken(id uint) (string, error) {
 	secret := os.Getenv("JWT_REFRESH_KEY")
 	minutesCount, _ := strconv.Atoi(os.Getenv("JWT_REFRESH_KEY_EXPIRE_HOURS_COUNT"))
 
@@ -81,121 +84,103 @@ func GenerateNewRefreshToken(id string) (string, error) {
 
 // TokenMetadata struct to describe metadata in JWT.
 type TokenMetadata struct {
-	UserID  uuid.UUID
+	UserID  uint
 	Roles   []string
 	Groups  []string
 	Expires int64
 }
 
 // ApplyToken checks if the provided roles and groups are present in the token metadata.
-func ApplyToken(c *fiber.Ctx, roles []string, groups []string) (uuid.UUID, error) {
-	TokenMetadata, err := ExtractTokenMetadata(c)
+func RolesGroupsInToken(c *fiber.Ctx, roles []string, groups []string) (uint, error) {
+	tokenMeta, err := ExtractTokenMetadata(c)
 	if err != nil {
-		return uuid.Nil, err
+		return 0, err
 	}
 	// Set expiration time from JWT data of current book.
-	expires := TokenMetadata.Expires
+	expires := tokenMeta.Expires
 	if time.Now().Unix() > expires {
-		return uuid.Nil, c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+		fmt.Println(time.Now().Unix())
+		fmt.Println(expires)
+		return 0, c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": true,
 			"msg":   "unauthorized, check expiration time of your token",
 		})
 	}
 
-	hasGroup := false
-	hasRole := false
-
-	if len(TokenMetadata.Groups) == 0 {
-		hasGroup = true
-	} else {
-		for _, role := range roles {
-			for _, r := range TokenMetadata.Roles {
-				if r == role {
-					hasRole = true
-					break
-				}
-			}
-		}
-	}
-
-	if len(TokenMetadata.Groups) == 0 {
-		hasGroup = true
-	} else {
-		for _, group := range groups {
-			for _, g := range TokenMetadata.Groups {
-				if g == group {
-					hasGroup = true
-					break
-				}
-			}
-		}
-	}
+	hasGroup := parseRolesGroups(groups, tokenMeta.Groups)
+	hasRole := parseRolesGroups(roles, tokenMeta.Roles)
 
 	if hasGroup && hasRole {
-		return TokenMetadata.UserID, nil
+		return tokenMeta.UserID, nil
 	} else {
-		return uuid.Nil, nil
+		return 0, nil
 	}
+}
+
+// parseRolesGroups is a function that takes in two slices of strings, values and metas, and returns a boolean value.
+func parseRolesGroups(values []string, metas []string) bool {
+	if len(values) == 0 {
+		return true
+	}
+	for _, value := range values {
+		for _, meta := range metas {
+			if value == meta {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // ExtractTokenMetadata func to extract metadata from JWT.
 func ExtractTokenMetadata(c *fiber.Ctx) (*TokenMetadata, error) {
-	token, err := verifyToken(c)
+	bearToken := c.Get("Authorization")
+
+	_, err := database.RedisConnection().Get(c.Context(), bearToken).Result()
+	if err != redis.Nil {
+		return nil, err
+	}
+
+	onlyToken := strings.Split(bearToken, " ")
+	token, err := jwt.Parse(onlyToken[1], jwtKeyFunc)
 	if err != nil {
 		return nil, err
 	}
 
-	// Setting and checking token and credentials.
+	// Setting and checking token
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
-		// User ID.
-		userID, err := uuid.Parse(claims["id"].(string))
+		userID := claims["id"].(float64)
+		userUint, err := strconv.ParseUint(fmt.Sprintf("%.0f", userID), 10, 64)
 		if err != nil {
 			return nil, err
 		}
-		roles, err := json.Marshal(claims["roles"])
-		if err != nil {
-			return nil, err
-		}
-		groups, err := json.Marshal(claims["groups"])
-		if err != nil {
-			return nil, err
-		}
-
-		// Expires time.
 		expires := int64(claims["expires"].(float64))
 
+		rolesSlice := []string{} // Initialize empty string slice
+		if rolesInterface, ok := claims["roles"].([]interface{}); ok {
+			for _, role := range rolesInterface {
+				if roleStr, ok := role.(string); ok {
+					rolesSlice = append(rolesSlice, roleStr)
+				}
+			}
+		}
+		groupsSlice := []string{} // Initialize empty string slice
+		if groupsInterface, ok := claims["groups"].([]interface{}); ok {
+			for _, group := range groupsInterface {
+				if groupStr, ok := group.(string); ok {
+					groupsSlice = append(groupsSlice, groupStr)
+				}
+			}
+		}
 		return &TokenMetadata{
-			UserID:  userID,
-			Roles:   strings.Split(string(roles), ","),
-			Groups:  strings.Split(string(groups), ","),
+			UserID:  uint(userUint),
+			Roles:   rolesSlice,
+			Groups:  groupsSlice,
 			Expires: expires,
 		}, nil
 	}
-
 	return nil, err
-}
-
-func verifyToken(c *fiber.Ctx) (*jwt.Token, error) {
-	tokenString := extractToken(c)
-
-	token, err := jwt.Parse(tokenString, jwtKeyFunc)
-	if err != nil {
-		return nil, err
-	}
-	return token, nil
-}
-
-func extractToken(c *fiber.Ctx) string {
-	bearToken := c.Get("Authorization")
-
-	// Normally Authorization HTTP header.
-	onlyToken := strings.Split(bearToken, " ")
-	if len(onlyToken) == 2 {
-		return onlyToken[1]
-	}
-
-	return ""
 }
 
 func jwtKeyFunc(token *jwt.Token) (interface{}, error) {
