@@ -14,7 +14,7 @@ import (
 )
 
 func GetLogin(c *fiber.Ctx) error {
-	userId, err := utils.RolesGroupsInToken(c, []string{"admin"}, []string{"admin"})
+	userId, err := utils.RolesGroupsInToken(c, []string{}, []string{})
 
 	if err != nil || userId == 0 {
 		errMsg := "Unauthorized"
