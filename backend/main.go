@@ -33,8 +33,10 @@ func main() {
 
 	// Routes.
 	routes.LoginRoutes(app)
+	routes.MessageRoutes(app)
 	routes.AdminRoutes(app)
 	routes.PublicRoutes(app)
+	routes.ConnectRoutes(app)
 	routes.NotFoundRoute(app)
 
 	log.Fatal(app.Listen(":3000"))

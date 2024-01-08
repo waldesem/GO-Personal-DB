@@ -45,7 +45,7 @@ func (role Role) GetID(name string) uint {
 type User struct {
 	gorm.Model
 	ID        uint      `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
-	FullName  string    `gorm:"size(256)" json:"fullname" serialize:"json"`
+	FullName  string    `gorm:"size(256)" json:"fullname" serialize:"json" validate:"required"`
 	UserName  string    `gorm:"size(256)" json:"username" serialize:"json"`
 	Password  []byte    `json:"password" serialize:"json"`
 	Email     string    `gorm:"size(256)" json:"email" serialize:"json"`

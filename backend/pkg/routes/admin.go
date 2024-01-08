@@ -18,16 +18,14 @@ func AdminRoutes(a *fiber.App) {
 	userGroup.Get("/:action/:id", controllers.GetUser)
 
 	roleGroup := a.Group("/role", middlewares.JWTProtected())
-	roleGroup.Get("/:value/:user_id")
-	roleGroup.Delete("/:value/:user_id")
+	roleGroup.Get("/:value/:user_id", controllers.GetRoles)
+	roleGroup.Delete("/:value/:user_id", controllers.DelRoles)
 
 	groupGroup := a.Group("/group", middlewares.JWTProtected())
-	groupGroup.Get("/:value/:user_id")
-	groupGroup.Delete("/:value/:user_id")
+	groupGroup.Get("/:value/:user_id", controllers.GetGroups)
+	groupGroup.Delete("/:value/:user_id", controllers.DelGroups)
 
 	tableGroup := a.Group("/table/:item", middlewares.JWTProtected())
-	tableGroup.Get("/:page")
-	tableGroup.Post("/:page")
-	tableGroup.Delete("/:item_id")
-	tableGroup.Patch("/:item_id")
+	tableGroup.Post("/:page", controllers.PostTablesRows)
+	tableGroup.Delete("/:item_id", controllers.DelTableRows)
 }

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"log"
 	"strconv"
 
@@ -11,8 +12,32 @@ import (
 	"backend/platform/database"
 )
 
+func GetClasses(c *fiber.Ctx) error {
+	tables := []string{"categories", "conclusions", "roles", "groups", "statuses", "regions"}
+	models := []interface{}{&[]models.Category{}, &[]models.Conclusion{}, &[]models.Role{}, &[]models.Group{}, &[]models.Status{}, &[]models.Region{}}
+
+	db := database.OpenDb()
+	results := make([]map[string]interface{}, len(tables))
+
+	for i, table := range tables {
+		db.Table(table).Find(models[i])
+		results[i] = map[string]interface{}{table: models[i]}
+	}
+
+	return c.Status(200).JSON(results)
+}
+
 // indexHandler handles the request to the index route.
-func GetIndex(c *fiber.Ctx) error {
+func PostIndex(c *fiber.Ctx) error {
+	auth, err := utils.RolesGroupsInToken(c, []string{"user"}, []string{"staffsec"})
+	if err != nil || auth == 0 {
+		errMsg := "Unauthorized User"
+		if err != nil {
+			errMsg = err.Error()
+		}
+		return c.Status(401).JSON(errMsg)
+	}
+
 	payload := struct {
 		Search string `json:"search"`
 	}{}
@@ -64,6 +89,9 @@ func GetIndex(c *fiber.Ctx) error {
 	if len(persons) == pagination {
 		hasNext = true
 	}
-
-	return c.JSON(fiber.Map{"result": persons, "hasNext": hasNext, "hasPrev": hasPrev})
+	result, err := json.Marshal(persons)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+	return c.JSON(fiber.Map{"result": result, "hasNext": hasNext, "hasPrev": hasPrev})
 }

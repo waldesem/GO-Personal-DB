@@ -4,12 +4,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"backend/app/controllers"
-	// "backend/pkg/middlewares"
+	"backend/pkg/middlewares"
 )
 
 func PublicRoutes(a *fiber.App) {
 
-	a.Get("/index/:item/:page", controllers.GetIndex)
+	a.Post("/index/:item/:page", middlewares.JWTProtected(), controllers.PostIndex)
+	a.Get("/classes", controllers.GetClasses)
 
 	// Create routes group.
 	// route := a.Group("/api/v1")
