@@ -249,6 +249,16 @@ type Conclusion struct {
 	Checks     []Check
 }
 
+func (conclusion Conclusion) GetID(name string) uint {
+	conclusionId := uint(0)
+	db := database.OpenDb()
+	db.Where(Conclusion{Conclusion: name}).First(&conclusion)
+	if conclusion.Conclusion == name {
+		conclusionId = conclusion.ID
+	}
+	return conclusionId
+}
+
 type Check struct {
 	gorm.Model
 	ID             uint      `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`

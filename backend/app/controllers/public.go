@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -668,4 +669,487 @@ func DeleteRelation(c *fiber.Ctx) error {
 	db.Delete(&relation)
 
 	return c.Status(200).JSON("Deleted")
+}
+
+// Check Handlers
+func GetCheck(c *fiber.Ctx) error {
+	var check models.Check
+	var checks []models.Check
+	db := database.OpenDb()
+
+	if c.Params("action") == "add" {
+
+		var person models.Person
+		db.First(&person, c.Params("item_id"))
+		model := models.Status{}
+		if person.StatusID == model.GetID(utils.Statuses["new"]) ||
+			person.StatusID == model.GetID(utils.Statuses["update"]) ||
+			person.StatusID == model.GetID(utils.Statuses["repeat"]) {
+
+			person.StatusID = model.GetID(utils.Statuses["manual"])
+			db.Save(&person)
+
+			auth, _ := utils.RolesGroupsInToken(c, []string{}, []string{})
+			var user models.User
+			db.First(&user, auth)
+
+			itemIDStr := c.Params("item_id")
+			itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
+			if err != nil {
+				return c.Status(500).JSON(err)
+			}
+
+			check.Officer = user.FullName
+			check.PersonID = uint(itemID)
+			db.Create(&check)
+		}
+		return c.Status(200).JSON("Added")
+
+	} else if c.Params("action") == "self" {
+		db.First(&check, c.Params("item_id"))
+
+		var oldUser models.User
+		db.
+			Where("fullname = ?", check.Officer).
+			First(&oldUser)
+
+		auth, _ := utils.RolesGroupsInToken(c, []string{}, []string{})
+		var newUser models.User
+		db.First(&newUser, auth)
+
+		var message models.Message
+		if oldUser.ID != newUser.ID {
+			message.MessageContent = "Aнкета переделегирована от " + oldUser.FullName + " пользователю " + newUser.FullName
+			message.UserID = oldUser.ID
+			db.Create(&message)
+			message.UserID = newUser.ID
+			db.Create(&message)
+		}
+		return c.Status(200).JSON("Delegated")
+
+	} else {
+		db.
+			Where("person_id = ?", c.Params("item_id")).
+			Find(&checks)
+	}
+	return c.Status(404).JSON(&checks)
+}
+
+func PatchCheck(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var check models.Check
+
+	if c.Params("action") == "create" {
+		auth, _ := utils.RolesGroupsInToken(c, []string{}, []string{})
+		var user models.User
+		db.First(&user, auth)
+
+		itemIDStr := c.Params("item_id")
+		itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
+		if err != nil {
+			return c.Status(500).JSON(err)
+		}
+		check.PersonID = uint(itemID)
+		check.Officer = user.FullName
+		db.Create(&check)
+
+	} else {
+		newCheck := models.Check{}
+		err := c.BodyParser(&newCheck)
+		if err != nil {
+			return c.Status(500).JSON(err)
+		}
+		db.First(&check, c.Params("item_id"))
+		db.
+			Model(&check).
+			Where("item_id = ?", c.Params("item_id")).
+			Updates(&newCheck)
+
+		var person models.Person
+		db.First(&person, check.PersonID)
+
+		model := models.Conclusion{}
+		if check.ConclusionID == model.GetID(utils.Conclusions["saved"]) {
+			person.StatusID = model.GetID(utils.Statuses["save"])
+		} else if check.ConclusionID == model.GetID(utils.Conclusions["pfo"]) {
+			person.StatusID = model.GetID(utils.Statuses["poligraf"])
+		} else {
+			person.StatusID = model.GetID(utils.Statuses["finish"])
+		}
+		db.Save(&person)
+	}
+	return c.Status(200).JSON("Updated")
+}
+
+func DeleteCheck(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var check models.Check
+
+	db.First(&check, c.Params("item_id"))
+
+	var person models.Person
+	db.First(&person, check.PersonID)
+
+	db.Delete(&check)
+
+	var status models.Status
+	person.StatusID = status.GetID(utils.Statuses["update"])
+	db.Save(&person)
+
+	return c.Status(204).JSON("Check deleted")
+}
+
+// Robot Handlers
+func GetRobot(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var robots []models.Robot
+	db.
+		Where("person_id = ?", c.Params("item_id")).
+		Find(&robots)
+	return c.Status(200).JSON(robots)
+}
+
+func DeleteRobot(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var robots []models.Robot
+	db.First(&robots, c.Params("item_id"))
+	return c.Status(200).JSON("Deleted")
+}
+
+func PostRobot(c *fiber.Ctx) error {
+	db := database.OpenDb()
+
+	var robot models.Robot
+	// var person models.Person
+
+	err := c.BodyParser(&robot)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+
+	db.Create(&robot)
+	return c.Status(200).JSON("Created")
+}
+
+// Investigations Handlers
+func GetInvestigation(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var investigations []models.Investigation
+	db.
+		Where("person_id = ?", c.Params("item_id")).
+		Find(&investigations)
+	return c.Status(200).JSON(investigations)
+}
+
+func PostInvestigation(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var investigation models.Investigation
+	err := c.BodyParser(&investigation)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+
+	auth, _ := utils.RolesGroupsInToken(c, []string{}, []string{})
+	var user models.User
+	db.First(&user, auth)
+
+	itemIDStr := c.Params("item_id")
+	itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+	investigation.PersonID = uint(itemID)
+	investigation.Officer = user.FullName
+
+	db.Create(&investigation)
+	return c.Status(200).JSON("Created")
+}
+
+func PatchInvestigation(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var investigation models.Investigation
+	db.First(&investigation, c.Params("item_id"))
+	newInvestigation := models.Investigation{}
+	err := c.BodyParser(&newInvestigation)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+	db.
+		Model(&investigation).
+		Where("item_id = ?", c.Params("item_id")).
+		Updates(&newInvestigation)
+	return c.Status(200).JSON("Updated")
+}
+
+func DeleteInvestigation(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var investigation models.Investigation
+	db.First(&investigation, c.Params("item_id"))
+	return c.Status(200).JSON("Deleted")
+}
+
+// Poligraf Handlers
+func GetPoligraf(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var poligraf []models.Poligraf
+	db.
+		Where("person_id = ?", c.Params("item_id")).
+		Find(&poligraf)
+	return c.Status(200).JSON(poligraf)
+}
+
+func PostPoligraf(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var poligraf models.Poligraf
+	err := c.BodyParser(&poligraf)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+
+	auth, _ := utils.RolesGroupsInToken(c, []string{}, []string{})
+	var user models.User
+	db.First(&user, auth)
+
+	itemIDStr := c.Params("item_id")
+	itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+	poligraf.PersonID = uint(itemID)
+	poligraf.Officer = user.FullName
+
+	db.Create(&poligraf)
+
+	var person models.Person
+	db.First(&person, poligraf.PersonID)
+
+	var status models.Status
+	if person.StatusID == status.GetID(utils.Statuses["poligraf"]) {
+		person.StatusID = status.GetID(utils.Statuses["finish"])
+		db.Save(&person)
+	}
+	return c.Status(200).JSON("Created")
+}
+
+func PatchPoligraf(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var poligraf models.Poligraf
+	db.First(&poligraf, c.Params("item_id"))
+	newPoligraf := models.Poligraf{}
+	err := c.BodyParser(&newPoligraf)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+	db.
+		Model(&poligraf).
+		Where("item_id = ?", c.Params("item_id")).
+		Updates(&newPoligraf)
+	return c.Status(200).JSON("Updated")
+}
+
+func DeletePoligraf(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var poligraf models.Poligraf
+	db.First(&poligraf, c.Params("item_id"))
+	return c.Status(200).JSON("Deleted")
+}
+
+// Inquiry Handlers
+func GetInquiry(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var inquiry []models.Inquiry
+	db.
+		Where("person_id = ?", c.Params("item_id")).
+		Find(&inquiry)
+	return c.Status(200).JSON(inquiry)
+}
+
+func PostInquiry(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var inquiry models.Inquiry
+	err := c.BodyParser(&inquiry)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+
+	auth, _ := utils.RolesGroupsInToken(c, []string{}, []string{})
+	var user models.User
+	db.First(&user, auth)
+
+	itemIDStr := c.Params("item_id")
+	itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+	inquiry.PersonID = uint(itemID)
+	inquiry.Officer = user.FullName
+
+	db.Create(&inquiry)
+
+	return c.Status(200).JSON("Created")
+}
+
+func PatchInquiry(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var inquiry models.Inquiry
+	db.First(&inquiry, c.Params("item_id"))
+	newInquiry := models.Inquiry{}
+	err := c.BodyParser(&newInquiry)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+	db.
+		Model(&inquiry).
+		Where("item_id = ?", c.Params("item_id")).
+		Updates(&newInquiry)
+	return c.Status(200).JSON("Updated")
+}
+
+func DeleteInquiry(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var inquiry models.Inquiry
+	db.First(&inquiry, c.Params("item_id"))
+	return c.Status(200).JSON("Deleted")
+}
+
+// Info Handler
+func PostInformation(c *fiber.Ctx) error {
+	type ResponseInformationBody struct {
+		RegionID uint   `json:"region_id"`
+		Start    string `json:"start"`
+		End      string `json:"end"`
+	}
+	var information ResponseInformationBody
+	err := c.BodyParser(&information)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+
+	var count int64
+
+	db := database.OpenDb()
+	db.
+		Table("checks").
+		Joins("JOIN persons ON checks.person_id = persons.id").
+		Group("checks.conclusion").
+		Where("persons.region_id = ?", information.RegionID).
+		Where("checks.created_at BETWEEN ? AND ?", information.Start, information.End).
+		Count(&count)
+
+	return c.Status(200).JSON(count)
+}
+
+// File Handlers
+func GetFile(c *fiber.Ctx) error {
+	db := database.OpenDb()
+	var person models.Person
+	db.First(&person, c.Params("item_id"))
+	filePath := filepath.Join(os.Getenv("BASE_PATH"), person.PathToDocs, "images", "image.jpg")
+	stat, err := os.Stat(filePath)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+	if !stat.IsDir() {
+		return c.Status(200).SendFile(filePath)
+	}
+	return c.Status(500).JSON(err)
+}
+
+func PostFile(c *fiber.Ctx) error {
+	var person models.Person
+
+	db := database.OpenDb()
+
+	if c.Params("action") == "anketa" {
+		file, err := c.FormFile("file")
+		if err != nil {
+			return c.Status(500).JSON(err)
+		}
+
+		tempPath := filepath.Join(os.Getenv("BASE_PATH"), fmt.Sprintf("%s-%s", time.Now().Format("2006-01-02 15-04-05"), file.Filename))
+		if err := c.SaveFile(file, tempPath); err != nil {
+			return c.Status(500).JSON(err)
+		}
+
+		anketa := utils.JsonParse(tempPath)
+
+		db.
+			Where("fullname = ?, birthday = ?", anketa.Resume["fullname"], anketa.Resume["birthday"]).
+			First(&person)
+
+		if person.ID == 0 {
+			db.Table("people").Create(&anketa.Resume)
+			person.StatusID = models.Status{}.GetID(utils.Statuses["new"])
+
+		} else {
+			person.StatusID = models.Status{}.GetID(utils.Statuses["update"])
+			db.
+				Table("people").
+				Where("id = ?", person.ID).
+				Updates(&anketa.Resume)
+		}
+
+		anketa.Staff["person_id"] = string(rune(person.ID))
+		db.Table("staff").Create(&anketa.Staff)
+
+		anketa.Document["person_id"] = string(rune(person.ID))
+		db.Table("documents").Create(&anketa.Document)
+
+		for _, address := range anketa.Addresses {
+			address["person_id"] = string(rune(person.ID))
+			db.Table("addresses").Create(&address)
+		}
+
+		for _, workplace := range anketa.Workplaces {
+			workplace["person_id"] = string(rune(person.ID))
+			db.Table("workplaces").Create(&workplace)
+		}
+
+		for _, contact := range anketa.Contacts {
+			contact["person_id"] = string(rune(person.ID))
+			db.Table("contacts").Create(&contact)
+		}
+
+		for _, affiliation := range anketa.Affilations {
+			affiliation["person_id"] = string(rune(person.ID))
+			db.Table("affilations").Create(&affiliation)
+		}
+
+		person.PathToDocs = makeFolder(person.FullName, person.ID)
+		actionPath := filepath.Join(os.Getenv("BASE_PATH"), person.PathToDocs, c.Params("action"))
+		err = os.Mkdir(actionPath, 0755)
+		if err == nil {
+			os.Rename(tempPath, filepath.Join(actionPath, file.Filename))
+		}
+		db.Save(&person)
+
+	} else {
+		form, err := c.MultipartForm()
+		if err != nil {
+			return c.Status(500).JSON(err)
+		}
+		files := form.File["files"]
+
+		db.Table("people").Where("id = ?", c.Params("item_id")).First(&person)
+		actionPath := filepath.Join(os.Getenv("BASE_PATH"), person.PathToDocs, c.Params("action"))
+		err = os.Mkdir(actionPath, 0755)
+		if err != nil {
+			return c.Status(500).JSON(err)
+		}
+
+		if c.Params("action") == "image" {
+			if err := c.SaveFile(files[0], filepath.Join(actionPath, "image.jpg")); err != nil {
+				return c.Status(500).JSON(err)
+			}
+
+		} else {
+			for _, file := range files {
+				if err := c.SaveFile(file, filepath.Join(actionPath, file.Filename)); err != nil {
+					return c.Status(500).JSON(err)
+				}
+			}
+		}
+	}
+
+	return c.Status(200).JSON(person.ID)
 }

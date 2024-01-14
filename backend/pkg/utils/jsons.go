@@ -92,7 +92,17 @@ type Person struct {
 	Organizations                     []Organization `json:"organizations"`
 }
 
-func jsonParse(jsonPath string) map[string]string {
+type Anketa struct {
+	Resume      map[string]string
+	Staff       map[string]string
+	Document    map[string]string
+	Addresses   []map[string]string
+	Workplaces  []map[string]string
+	Contacts    []map[string]string
+	Affilations []map[string]string
+}
+
+func JsonParse(jsonPath string) Anketa {
 	f, err := os.Open(jsonPath)
 	if err != nil {
 		log.Println(err)
@@ -119,11 +129,79 @@ func jsonParse(jsonPath string) map[string]string {
 		"citizen":    person.Citizen,
 		"exCitizen":  person.AdditionalCitizenship,
 		"marital":    person.MaritalStatus,
+		"education":  person.parseEducation(),
 		"inn":        person.Inn,
 		"snils":      person.Snils,
 	}
 
-	return resume
+	staff := map[string]string{
+		"position":   person.PositionName,
+		"department": person.Department,
+	}
+
+	document := map[string]string{
+		"view":   "Паспорт РФ",
+		"series": person.PassportSerial,
+		"number": person.PassportNumber,
+		"issue":  person.PassportIssueDate,
+		"agency": person.PassportIssuedBy,
+	}
+
+	addresses := []map[string]string{
+		{
+			"view":         "Адрес проживания",
+			"live_address": person.RegAddress,
+		},
+		{
+			"view":        "Адрес регистрации",
+			"reg_address": person.ValidAddress,
+		},
+	}
+
+	contacts := []map[string]string{
+		{
+			"view":  "Телефон",
+			"phone": person.ContactPhone,
+		},
+		{
+			"view":  "Электронная почта",
+			"email": person.Email,
+		},
+	}
+
+	works := person.parseWorkplace()
+	workplaces := []map[string]string{}
+	for _, item := range works {
+		workplaces = append(workplaces, map[string]string{
+			"beginDate": item.BeginDate,
+			"endDate":   item.EndDate,
+			"name":      item.Name,
+			"address":   item.Address,
+			"position":  item.Position,
+			"fire":      item.FireReason,
+		})
+	}
+
+	affs := person.parseAffilation()
+	affilations := []map[string]string{}
+	for _, item := range affs {
+		affilations = append(affilations, map[string]string{
+			"view":     item.View,
+			"name":     item.Name,
+			"position": item.Position,
+			"inn":      item.Inn,
+		})
+	}
+
+	return Anketa{
+		Resume:      resume,
+		Staff:       staff,
+		Document:    document,
+		Addresses:   addresses,
+		Workplaces:  workplaces,
+		Contacts:    contacts,
+		Affilations: affilations,
+	}
 }
 
 func trimmString(value string) string {
