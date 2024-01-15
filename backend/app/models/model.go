@@ -3,13 +3,10 @@ package models
 import (
 	"time"
 
-	"gorm.io/gorm"
-
 	"backend/platform/database"
 )
 
 type Group struct {
-	gorm.Model
 	ID        uint   `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	NameGroup string `gorm:"size(256)" json:"group" serialize:"json"`
 	Users     []User `gorm:"many2many:user_groups;"`
@@ -26,7 +23,6 @@ func (group Group) GetID(name string) uint {
 }
 
 type Role struct {
-	gorm.Model
 	ID       uint   `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	NameRole string `gorm:"size(256)" json:"role" serialize:"json"`
 	Users    []User `gorm:"many2many:user_roles;"`
@@ -43,7 +39,6 @@ func (role Role) GetID(name string) uint {
 }
 
 type User struct {
-	gorm.Model
 	ID        uint      `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	FullName  string    `gorm:"size(256)" json:"fullname" serialize:"json" validate:"required"`
 	UserName  string    `gorm:"size(256)" json:"username" serialize:"json"`
@@ -82,8 +77,7 @@ func (user User) HasRole(roles []string) bool {
 }
 
 type Message struct {
-	gorm.Model
-	ID             uint      `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json" validate:"required,uuid"`
+	ID             uint      `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	Title          string    `gorm:"size(256)" json:"title" serialize:"json"`
 	MessageContent string    `gorm:"size(256)" json:"message" serialize:"json"`
 	StatusRead     string    `gorm:"size(256)" json:"status" serialize:"json"`
@@ -92,7 +86,6 @@ type Message struct {
 }
 
 type Category struct {
-	gorm.Model
 	ID           uint   `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	NameCategory string `gorm:"size(256)" json:"category" serialize:"json"`
 	Persons      []Person
@@ -109,7 +102,6 @@ func (category Category) GetID(name string) uint {
 }
 
 type Status struct {
-	gorm.Model
 	ID         uint   `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	NameStatus string `gorm:"size(256)" json:"status" serialize:"json"`
 	Persons    []Person
@@ -126,7 +118,6 @@ func (status Status) GetID(name string) uint {
 }
 
 type Region struct {
-	gorm.Model
 	ID         uint   `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	NameRegion string `gorm:"size(256)" json:"region" serialize:"json"`
 	Persons    []Person
@@ -143,7 +134,6 @@ func (region Region) GetID(name string) uint {
 }
 
 type Person struct {
-	gorm.Model
 	ID               uint      `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	CategoryID       uint      `json:"category_id" serialize:"json"`
 	RegionID         uint      `json:"region_id" serialize:"json"`
@@ -177,7 +167,6 @@ type Person struct {
 }
 
 type Staff struct {
-	gorm.Model
 	ID         uint   `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	Position   string `json:"position" serialize:"json"`
 	Department string `json:"department" serialize:"json"`
@@ -185,7 +174,6 @@ type Staff struct {
 }
 
 type Document struct {
-	gorm.Model
 	ID       uint      `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	View     string    `gorm:"size(256)" json:"view" serialize:"json"`
 	Series   string    `gorm:"size(256)" json:"series" serialize:"json"`
@@ -196,7 +184,6 @@ type Document struct {
 }
 
 type Address struct {
-	gorm.Model
 	ID       uint   `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	View     string `gorm:"size(256)" json:"view" serialize:"json"`
 	Region   string `gorm:"size(256)" json:"region" serialize:"json"`
@@ -205,7 +192,6 @@ type Address struct {
 }
 
 type Contact struct {
-	gorm.Model
 	ID       uint   `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	View     string `gorm:"size(256)" json:"view" serialize:"json"`
 	Contact  string `gorm:"size(256)" json:"contact" serialize:"json"`
@@ -213,7 +199,6 @@ type Contact struct {
 }
 
 type Workplace struct {
-	gorm.Model
 	ID        uint   `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	View      string `json:"view" serialize:"json"`
 	Workplace string `json:"workplace" serialize:"json"`
@@ -224,7 +209,6 @@ type Workplace struct {
 }
 
 type Affilation struct {
-	gorm.Model
 	ID       uint      `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	View     string    `gorm:"size(256)" json:"view" serialize:"json"`
 	Name     string    `gorm:"size(256)" json:"name" serialize:"json"`
@@ -235,7 +219,6 @@ type Affilation struct {
 }
 
 type Relation struct {
-	gorm.Model
 	ID       uint   `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	View     string `gorm:"size(256)" json:"relation" serialize:"json"`
 	Relation uint   `gorm:"foreignKey:PersonID" json:"relation_id" serialize:"json"`
@@ -243,7 +226,6 @@ type Relation struct {
 }
 
 type Conclusion struct {
-	gorm.Model
 	ID         uint   `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	Conclusion string `gorm:"size(256)" json:"conclusion" serialize:"json"`
 	Checks     []Check
@@ -260,7 +242,6 @@ func (conclusion Conclusion) GetID(name string) uint {
 }
 
 type Check struct {
-	gorm.Model
 	ID             uint      `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	CheckWorkplace string    `json:"workplace" serialize:"json"`
 	CheckEmployee  string    `json:"employee" serialize:"json"`
@@ -285,7 +266,6 @@ type Check struct {
 }
 
 type Robot struct {
-	gorm.Model
 	ID         uint      `gorm:"primaryKey"`
 	Employee   string    `json:"employee" serialize:"json"`
 	Inn        string    `json:"inn" serialize:"json"`
@@ -300,7 +280,6 @@ type Robot struct {
 }
 
 type Poligraf struct {
-	gorm.Model
 	ID       uint      `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	Theme    string    `gorm:"size(256)" json:"theme" serialize:"json"`
 	Results  string    `json:"results" serialize:"json"`
@@ -310,7 +289,6 @@ type Poligraf struct {
 }
 
 type Investigation struct {
-	gorm.Model
 	ID       uint      `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	Theme    string    `gorm:"size(256)" json:"theme" serialize:"json"`
 	Info     string    `json:"info" serialize:"json"`
@@ -320,7 +298,6 @@ type Investigation struct {
 }
 
 type Inquiry struct {
-	gorm.Model
 	ID        uint      `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	Info      string    `json:"info" serialize:"json"`
 	Initiator string    `gorm:"size(256)" json:"initiator" serialize:"json"`
@@ -331,7 +308,6 @@ type Inquiry struct {
 }
 
 type Connection struct {
-	gorm.Model
 	ID       uint      `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	Company  string    `gorm:"size(256)" json:"company" serialize:"json"`
 	City     string    `gorm:"size(256)" json:"city" serialize:"json"`

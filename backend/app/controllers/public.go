@@ -15,6 +15,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"backend/app/models"
+	"backend/pkg/middlewares"
 	"backend/pkg/utils"
 	"backend/platform/database"
 )
@@ -676,6 +677,7 @@ func GetCheck(c *fiber.Ctx) error {
 	var check models.Check
 	var checks []models.Check
 	db := database.OpenDb()
+	tokenMeta, _ := middlewares.ExtractTokenMetadata(c)
 
 	if c.Params("action") == "add" {
 
@@ -689,17 +691,13 @@ func GetCheck(c *fiber.Ctx) error {
 			person.StatusID = model.GetID(utils.Statuses["manual"])
 			db.Save(&person)
 
-			auth, _ := utils.RolesGroupsInToken(c, []string{}, []string{})
-			var user models.User
-			db.First(&user, auth)
-
 			itemIDStr := c.Params("item_id")
 			itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
 			if err != nil {
 				return c.Status(500).JSON(err)
 			}
 
-			check.Officer = user.FullName
+			check.Officer = tokenMeta.FullName
 			check.PersonID = uint(itemID)
 			db.Create(&check)
 		}
@@ -713,16 +711,12 @@ func GetCheck(c *fiber.Ctx) error {
 			Where("fullname = ?", check.Officer).
 			First(&oldUser)
 
-		auth, _ := utils.RolesGroupsInToken(c, []string{}, []string{})
-		var newUser models.User
-		db.First(&newUser, auth)
-
 		var message models.Message
-		if oldUser.ID != newUser.ID {
-			message.MessageContent = "Aнкета переделегирована от " + oldUser.FullName + " пользователю " + newUser.FullName
+		if oldUser.ID != tokenMeta.UserID {
+			message.MessageContent = "Aнкета переделегирована " + tokenMeta.FullName
 			message.UserID = oldUser.ID
 			db.Create(&message)
-			message.UserID = newUser.ID
+			message.UserID = tokenMeta.UserID
 			db.Create(&message)
 		}
 		return c.Status(200).JSON("Delegated")
@@ -740,9 +734,7 @@ func PatchCheck(c *fiber.Ctx) error {
 	var check models.Check
 
 	if c.Params("action") == "create" {
-		auth, _ := utils.RolesGroupsInToken(c, []string{}, []string{})
-		var user models.User
-		db.First(&user, auth)
+		tokenMeta, _ := middlewares.ExtractTokenMetadata(c)
 
 		itemIDStr := c.Params("item_id")
 		itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
@@ -750,7 +742,7 @@ func PatchCheck(c *fiber.Ctx) error {
 			return c.Status(500).JSON(err)
 		}
 		check.PersonID = uint(itemID)
-		check.Officer = user.FullName
+		check.Officer = tokenMeta.FullName
 		db.Create(&check)
 
 	} else {
@@ -849,9 +841,7 @@ func PostInvestigation(c *fiber.Ctx) error {
 		return c.Status(500).JSON(err)
 	}
 
-	auth, _ := utils.RolesGroupsInToken(c, []string{}, []string{})
-	var user models.User
-	db.First(&user, auth)
+	tokenMeta, _ := middlewares.ExtractTokenMetadata(c)
 
 	itemIDStr := c.Params("item_id")
 	itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
@@ -859,7 +849,7 @@ func PostInvestigation(c *fiber.Ctx) error {
 		return c.Status(500).JSON(err)
 	}
 	investigation.PersonID = uint(itemID)
-	investigation.Officer = user.FullName
+	investigation.Officer = tokenMeta.FullName
 
 	db.Create(&investigation)
 	return c.Status(200).JSON("Created")
@@ -906,9 +896,7 @@ func PostPoligraf(c *fiber.Ctx) error {
 		return c.Status(500).JSON(err)
 	}
 
-	auth, _ := utils.RolesGroupsInToken(c, []string{}, []string{})
-	var user models.User
-	db.First(&user, auth)
+	tokenMeta, _ := middlewares.ExtractTokenMetadata(c)
 
 	itemIDStr := c.Params("item_id")
 	itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
@@ -916,7 +904,7 @@ func PostPoligraf(c *fiber.Ctx) error {
 		return c.Status(500).JSON(err)
 	}
 	poligraf.PersonID = uint(itemID)
-	poligraf.Officer = user.FullName
+	poligraf.Officer = tokenMeta.FullName
 
 	db.Create(&poligraf)
 
@@ -972,9 +960,7 @@ func PostInquiry(c *fiber.Ctx) error {
 		return c.Status(500).JSON(err)
 	}
 
-	auth, _ := utils.RolesGroupsInToken(c, []string{}, []string{})
-	var user models.User
-	db.First(&user, auth)
+	tokenMeta, _ := middlewares.ExtractTokenMetadata(c)
 
 	itemIDStr := c.Params("item_id")
 	itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
@@ -982,7 +968,7 @@ func PostInquiry(c *fiber.Ctx) error {
 		return c.Status(500).JSON(err)
 	}
 	inquiry.PersonID = uint(itemID)
-	inquiry.Officer = user.FullName
+	inquiry.Officer = tokenMeta.FullName
 
 	db.Create(&inquiry)
 

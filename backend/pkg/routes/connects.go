@@ -9,8 +9,8 @@ import (
 
 func ConnectRoutes(a *fiber.App) {
 
-	a.Get("/connects/:page", middlewares.JWTProtected(), controllers.GetConnects)
-	connectGroup := a.Group("/connect", middlewares.JWTProtected())
+	a.Get("/connects/:page", middlewares.AuthRequired([]string{}, []string{}), controllers.GetConnects)
+	connectGroup := a.Group("/connect", middlewares.AuthRequired([]string{}, []string{}))
 	connectGroup.Post("/", controllers.PostConnect)
 	connectGroup.Patch("/:action/:id", controllers.PatchConnect)
 	connectGroup.Delete("/:action/:id", controllers.DeleteConnect)

@@ -24,7 +24,6 @@ func GeneratePassword(p string) []byte {
 func ComparePasswords(hashedPwd []byte, inputPwd string) bool {
 	byteInput := NormalizePassword(inputPwd)
 
-	// Return result.
 	if err := bcrypt.CompareHashAndPassword(hashedPwd, byteInput); err != nil {
 		return false
 	}

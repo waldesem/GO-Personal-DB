@@ -9,7 +9,7 @@ import (
 
 func FileRoutes(a *fiber.App) {
 
-	managerGroup := a.Group("/manager", middlewares.JWTProtected())
+	managerGroup := a.Group("/manager", middlewares.AuthRequired([]string{}, []string{}))
 	managerGroup.Get("/", controllers.GetFiles)
 	managerGroup.Post("/:action", controllers.PostFiles)
 }

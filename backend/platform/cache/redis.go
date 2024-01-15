@@ -9,20 +9,18 @@ import (
 )
 
 // RedisConnection func for connect to Redis server.
-func RedisConnection() (*redis.Client, error) {
-	dbNumber, _ := strconv.Atoi(os.Getenv("REDIS_DB_NUMBER"))
-
-	redisConnURL := fmt.Sprintf(
-		"%s:%s",
-		os.Getenv("REDIS_HOST"),
-		os.Getenv("REDIS_PORT"),
-	)
+func RedisConnection() *redis.Client {
+	redisDbNum, _ := os.LookupEnv("REDIS_DB_NUMBER")
+	dbNumber, _ := strconv.Atoi(redisDbNum)
+	redisHost, _ := os.LookupEnv("REDIS_HOST")
+	redisPort, _ := os.LookupEnv("REDIS_PORT")
+	redisPswd, _ := os.LookupEnv("REDIS_PASSWORD")
 
 	options := &redis.Options{
-		Addr:     redisConnURL,
-		Password: os.Getenv("REDIS_PASSWORD"),
+		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
+		Password: redisPswd,
 		DB:       dbNumber,
 	}
 
-	return redis.NewClient(options), nil
+	return redis.NewClient(options)
 }

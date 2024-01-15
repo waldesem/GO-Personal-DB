@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/gofiber/fiber/v2"
-
-	"backend/pkg/utils"
 )
 
 type File struct {
@@ -17,15 +15,15 @@ type File struct {
 	BasePath   string   `json:"base_path"`
 }
 
+type ResponseFileBody struct {
+	Item  string   `json:"item"`
+	Items []string `json:"items"`
+	Old   string   `json:"old"`
+	New   string   `json:"new"`
+	News  []string `json:"news"`
+}
+
 func GetFiles(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"user"}, []string{"staffsec"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
 	file := File{}
 	return DirsFilesList(c, file)
 }
@@ -53,25 +51,8 @@ func DirsFilesList(c *fiber.Ctx, file File) error {
 }
 
 func PostFiles(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"user"}, []string{"staffsec"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
-	type ResponseFileBody struct {
-		Item  string   `json:"item"`
-		Items []string `json:"items"`
-		Old   string   `json:"old"`
-		New   string   `json:"new"`
-		News  []string `json:"news"`
-	}
-
 	file, resp := File{}, ResponseFileBody{}
-	err = c.BodyParser(&resp)
+	err := c.BodyParser(&resp)
 	if err != nil {
 		return c.Status(500).JSON(err)
 	}

@@ -7,19 +7,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"backend/app/models"
-	"backend/pkg/utils"
+	"backend/pkg/middlewares"
 	"backend/platform/database"
 )
 
 func GetMessages(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"user"}, []string{"staffsec"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
+	tokenMeta, _ := middlewares.ExtractTokenMetadata(c)
 
 	intPage, err := strconv.Atoi(c.Params("page"))
 	if err != nil {
@@ -34,20 +27,20 @@ func GetMessages(c *fiber.Ctx) error {
 	switch c.Params("action") {
 	case "new":
 		db.
-			Where("status = ?, user_id = ?", "new", auth).
+			Where("status = ?, user_id = ?", "new", tokenMeta.UserID).
 			Find(&messages).
 			Limit(pagination).
 			Offset(pagination * (intPage - 1))
 	case "read":
 		db.
-			Where("status = ?, user_id = ?", "new", auth).
+			Where("status = ?, user_id = ?", "new", tokenMeta.UserID).
 			Find(&messages)
 		for message := range messages {
 			messages[message].StatusRead = "reply"
 			db.Save(&messages[message])
 		}
 		db.
-			Where("status = ?, user_id = ?", "new", auth).
+			Where("status = ?, user_id = ?", "new", tokenMeta.UserID).
 			Find(&messages).
 			Limit(pagination).
 			Offset(pagination * (intPage - 1))
@@ -67,21 +60,14 @@ func GetMessages(c *fiber.Ctx) error {
 }
 
 func DeleteMessage(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"user"}, []string{"staffsec"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
+	tokenMeta, _ := middlewares.ExtractTokenMetadata(c)
 
 	db := database.OpenDb()
 	var messages []models.Message
 
 	db.
 		Find(&messages).
-		Where("person_id = ?", auth).
+		Where("person_id = ?", tokenMeta.UserID).
 		Delete(&messages)
 	return c.SendStatus(fiber.StatusOK)
 }

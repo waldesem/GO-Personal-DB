@@ -14,15 +14,6 @@ import (
 )
 
 func GetUsers(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"admin"}, []string{"admin"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	db := database.OpenDb()
 	var users []models.User
 	db.Find(&users)
@@ -36,15 +27,6 @@ func GetUsers(c *fiber.Ctx) error {
 }
 
 func GetUser(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"admin"}, []string{"admin"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	db := database.OpenDb()
 	var user models.User
 	db.First(&user, c.Params("id"))
@@ -73,15 +55,6 @@ func GetUser(c *fiber.Ctx) error {
 }
 
 func PostUser(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"admin"}, []string{"admin"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	userdata := struct {
 		UserName string `json:"username"`
 		FullName string `json:"full_name"`
@@ -108,15 +81,6 @@ func PostUser(c *fiber.Ctx) error {
 }
 
 func PatchUser(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"admin"}, []string{"admin"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	userdata := struct {
 		UserName string `json:"username"`
 		FullName string `json:"full_name"`
@@ -141,15 +105,6 @@ func PatchUser(c *fiber.Ctx) error {
 }
 
 func DeleteUser(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"admin"}, []string{"admin"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	db := database.OpenDb()
 	var user models.User
 
@@ -160,15 +115,6 @@ func DeleteUser(c *fiber.Ctx) error {
 }
 
 func GetRoles(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"admin"}, []string{"admin"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	db := database.OpenDb()
 	var user models.User
 	db.
@@ -189,15 +135,6 @@ func GetRoles(c *fiber.Ctx) error {
 }
 
 func GetGroups(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"admin"}, []string{"admin"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	db := database.OpenDb()
 	var user models.User
 	db.
@@ -219,15 +156,6 @@ func GetGroups(c *fiber.Ctx) error {
 }
 
 func DelRoles(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"admin"}, []string{"admin"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	db := database.OpenDb()
 	var user models.User
 
@@ -249,15 +177,6 @@ func DelRoles(c *fiber.Ctx) error {
 }
 
 func DelGroups(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"admin"}, []string{"admin"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	db := database.OpenDb()
 	var user models.User
 
@@ -279,15 +198,6 @@ func DelGroups(c *fiber.Ctx) error {
 }
 
 func PostTablesRows(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"admin"}, []string{"admin"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	db := database.OpenDb()
 	intPage, err := strconv.Atoi(c.Params("page"))
 	if err != nil {
@@ -343,15 +253,6 @@ func PostTablesRows(c *fiber.Ctx) error {
 }
 
 func DelTableRows(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{"admin"}, []string{"admin"})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	database.OpenDb().
 		Table(c.Params("item")).
 		Where("id = ?", c.Params("id")).

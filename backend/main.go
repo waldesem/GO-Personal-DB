@@ -26,7 +26,7 @@ func main() {
 	app := fiber.New(config)
 
 	// Static files.
-	app.Static("/", "./public/index.html")
+	app.Static("/", "./static/index.html")
 
 	// Middlewares.
 	middlewares.FiberMiddleware(app)

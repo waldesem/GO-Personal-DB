@@ -11,19 +11,20 @@ import (
 
 func OpenDb() *gorm.DB {
 
-	host := os.Getenv("DBHOST")
-	usr := os.Getenv("DBUSER")
-	pwd := os.Getenv("DBPASSWORD")
-	name := os.Getenv("DBNAME")
-	port := os.Getenv("DBPORT")
+	host, _ := os.LookupEnv("DBHOST")
+	usr, _ := os.LookupEnv("DBUSER")
+	pwd, _ := os.LookupEnv("DBPASSWORD")
+	name, _ := os.LookupEnv("DBNAME")
+	port, _ := os.LookupEnv("DBPORT")
 
 	var dsn = fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", host, usr, pwd, name, port,
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		host, usr, pwd, name, port,
 	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	return db
 }

@@ -7,20 +7,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"backend/app/models"
-	"backend/pkg/utils"
 	"backend/platform/database"
 )
 
 func GetConnects(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{}, []string{})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	db := database.OpenDb()
 	intPage, err := strconv.Atoi(c.Params("page"))
 	if err != nil {
@@ -72,15 +62,6 @@ func GetConnects(c *fiber.Ctx) error {
 }
 
 func PostConnect(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{}, []string{})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	db := database.OpenDb()
 	var connect models.Connection
 
@@ -94,15 +75,6 @@ func PostConnect(c *fiber.Ctx) error {
 }
 
 func PatchConnect(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{}, []string{})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	db := database.OpenDb()
 	var connect models.Connection
 
@@ -116,15 +88,6 @@ func PatchConnect(c *fiber.Ctx) error {
 }
 
 func DeleteConnect(c *fiber.Ctx) error {
-	auth, err := utils.RolesGroupsInToken(c, []string{}, []string{})
-	if err != nil || auth == 0 {
-		errMsg := "Unauthorized User"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return c.Status(401).JSON(errMsg)
-	}
-
 	db := database.OpenDb()
 	var connect models.Connection
 
