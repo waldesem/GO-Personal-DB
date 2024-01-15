@@ -44,18 +44,28 @@ func main() {
 }
 
 func createDefault() {
-	basePath := utils.MakeBasePath()
-	_, err := os.Stat(basePath)
+	basePath, err := utils.MakeBasePath()
 	if err != nil {
-		os.Mkdir(basePath, 0755)
+		log.Fatal(err)
 	}
-	letters := "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
 
+	_, err = os.Stat(basePath)
+	if err != nil {
+		err = os.Mkdir(basePath, 0755)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	letters := "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
 	for _, letter := range letters {
 		letterPath := filepath.Join(basePath, string(letter))
 		_, err = os.Stat(letterPath)
 		if err != nil {
-			os.Mkdir(letterPath, 0755)
+			err = os.Mkdir(letterPath, 0755)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 

@@ -1,15 +1,14 @@
 package utils
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 )
 
-func MakeBasePath() string {
+func MakeBasePath() (string, error) {
 	cur, err := os.Getwd()
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
-	return filepath.Join(cur, "..", "..", "..", "..", "persons")
+	return filepath.Join(cur, "..", "..", "..", "..", "persons"), nil
 }

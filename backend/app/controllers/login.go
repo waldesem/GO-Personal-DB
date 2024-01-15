@@ -41,8 +41,8 @@ func GetLogin(c *fiber.Ctx) error {
 
 func PostLogin(c *fiber.Ctx) error {
 	userdata := struct {
-		UserName string `json:"username"`
-		Password string `json:"password"`
+		UserName string
+		Password string
 	}{}
 	if err := c.BodyParser(&userdata); err != nil {
 		log.Println(err)
