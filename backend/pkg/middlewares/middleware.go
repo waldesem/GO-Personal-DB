@@ -3,6 +3,8 @@ package middlewares
 import (
 	"os"
 
+	"backend/pkg/utils"
+
 	jwtMiddleware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -21,7 +23,6 @@ func FiberMiddleware(a *fiber.App) {
 
 // JWTProtected func for specify routes group with JWT authentication.
 func JWTProtected() func(*fiber.Ctx) error {
-	// Create config for JWT authentication middleware.
 	config := jwtMiddleware.Config{
 		SigningKey:   jwtMiddleware.SigningKey{Key: []byte(os.Getenv("JWT_SECRET_KEY"))},
 		ContextKey:   "jwt",
@@ -43,4 +44,42 @@ func jwtError(c *fiber.Ctx, err error) error {
 		"error": true,
 		"msg":   err.Error(),
 	})
+}
+
+func AuthRequired(roles []string, groups []string) func(*fiber.Ctx) error {
+	config := jwtMiddleware.Config{
+		SigningKey:   jwtMiddleware.SigningKey{Key: []byte(os.Getenv("JWT_SECRET_KEY"))},
+		ContextKey:   "jwt",
+		ErrorHandler: jwtError,
+	}
+
+	jwt := jwtMiddleware.New(config)
+
+	// Return a function that combines the JWT middleware with custom authorization logic.
+	return func(c *fiber.Ctx) error {
+		// Use the JWT middleware to authenticate the request.
+		err := jwt(c)
+
+		// Check if there was an error or if the authentication failed.
+		if err != nil || c.Locals("jwt") == nil {
+			errMsg := "Unauthorized User"
+			if err != nil {
+				errMsg = err.Error()
+			}
+			return c.Status(401).JSON(errMsg)
+		}
+
+		// Custom authorization logic here.
+		auth, err := utils.RolesGroupsInToken(c, roles, groups)
+		if err != nil || auth == 0 {
+			errMsg := "Unauthorized User"
+			if err != nil {
+				errMsg = err.Error()
+			}
+			return c.Status(401).JSON(errMsg)
+		}
+
+		// Proceed to the next middleware or handler.
+		return c.Next()
+	}
 }

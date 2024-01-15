@@ -70,3 +70,65 @@ func GetConnects(c *fiber.Ctx) error {
 		"cities":    cities,
 	})
 }
+
+func PostConnect(c *fiber.Ctx) error {
+	auth, err := utils.RolesGroupsInToken(c, []string{}, []string{})
+	if err != nil || auth == 0 {
+		errMsg := "Unauthorized User"
+		if err != nil {
+			errMsg = err.Error()
+		}
+		return c.Status(401).JSON(errMsg)
+	}
+
+	db := database.OpenDb()
+	var connect models.Connection
+
+	if err := c.BodyParser(&connect); err != nil {
+		return c.Status(500).JSON(err)
+	}
+
+	db.Create(&connect)
+
+	return c.Status(200).JSON("Created")
+}
+
+func PatchConnect(c *fiber.Ctx) error {
+	auth, err := utils.RolesGroupsInToken(c, []string{}, []string{})
+	if err != nil || auth == 0 {
+		errMsg := "Unauthorized User"
+		if err != nil {
+			errMsg = err.Error()
+		}
+		return c.Status(401).JSON(errMsg)
+	}
+
+	db := database.OpenDb()
+	var connect models.Connection
+
+	if err := c.BodyParser(&connect); err != nil {
+		return c.Status(500).JSON(err)
+	}
+
+	db.Model(&connect).Where("id = ?", c.Params("item_id")).Updates(&connect)
+
+	return c.Status(200).JSON("Updated")
+}
+
+func DeleteConnect(c *fiber.Ctx) error {
+	auth, err := utils.RolesGroupsInToken(c, []string{}, []string{})
+	if err != nil || auth == 0 {
+		errMsg := "Unauthorized User"
+		if err != nil {
+			errMsg = err.Error()
+		}
+		return c.Status(401).JSON(errMsg)
+	}
+
+	db := database.OpenDb()
+	var connect models.Connection
+
+	db.Delete(&connect, c.Params("item_id"))
+
+	return c.Status(200).JSON("Deleted")
+}

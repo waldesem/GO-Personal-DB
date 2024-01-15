@@ -36,6 +36,7 @@ func main() {
 	routes.MessageRoutes(app)
 	routes.AdminRoutes(app)
 	routes.PublicRoutes(app)
+	routes.FileRoutes(app)
 	routes.ConnectRoutes(app)
 	routes.NotFoundRoute(app)
 
