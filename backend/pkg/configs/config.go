@@ -15,6 +15,8 @@ func FiberConfig() fiber.Config {
 
 	// Return Fiber configuration.
 	return fiber.Config{
-		ReadTimeout: time.Second * time.Duration(readTimeoutSecondsCount),
+		ReadTimeout:  time.Second * time.Duration(readTimeoutSecondsCount),
+		ServerHeader: "Fiber",
+		AppName:      "GO-Personal-DB v.0.1.0",
 	}
 }

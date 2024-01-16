@@ -10,85 +10,129 @@ import (
 func PublicRoutes(a *fiber.App) {
 
 	a.Get("/classes", controllers.GetClasses)
-	a.Post("/index/:item/:page", middlewares.AuthRequired([]string{}, []string{}), controllers.PostIndex)
-	a.Post("information", controllers.PostInformation)
+	a.Post("/information", controllers.PostInformation)
+	a.Post(
+		"/index/:item/:page",
+		controllers.PostIndex, middlewares.AuthRequired([]string{}, []string{}),
+	)
 
-	resumeGroup := a.Group("/resume")
-	resumeGroup.Get("/:action/:person_id", middlewares.AuthRequired([]string{}, []string{}), controllers.GetResume)
-	resumeGroup.Post("/:action", middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}), controllers.PostResume)
-	resumeGroup.Delete("/:action/:person_id", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteResume)
+	resumeGroup := a.Group(
+		"/resume",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	resumeGroup.Get("/:action/:person_id", controllers.GetResume)
+	resumeGroup.Post("/:action", controllers.PostResume)
+	resumeGroup.Delete("/:action/:person_id", controllers.DeleteResume)
 
-	staffGroup := a.Group("/staff/:action/:item_id")
-	staffGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetStaffs)
-	staffGroup.Post("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PostStaffs)
-	staffGroup.Patch("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PatchStaffs)
-	staffGroup.Delete("/", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteStaffs)
+	staffGroup := a.Group(
+		"/staff/:action/:item_id",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	staffGroup.Get("/", controllers.GetStaffs)
+	staffGroup.Post("/", controllers.PostStaffs)
+	staffGroup.Patch("/", controllers.PatchStaffs)
+	staffGroup.Delete("/", controllers.DeleteStaffs)
 
-	docsGroup := a.Group("/document/:action/:item_id")
-	docsGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetDocs)
-	docsGroup.Post("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PostDocs)
-	docsGroup.Delete("/", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteDocs)
-	docsGroup.Patch("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PatchDocs)
+	docsGroup := a.Group("/document/:action/:item_id",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	docsGroup.Get("/", controllers.GetDocs)
+	docsGroup.Post("/", controllers.PostDocs)
+	docsGroup.Delete("/", controllers.DeleteDocs)
+	docsGroup.Patch("/", controllers.PatchDocs)
 
-	addressGroup := a.Group("/address/:action/:item_id")
-	addressGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetAddress)
-	addressGroup.Post("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PostAddress)
-	addressGroup.Delete("/", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteAddress)
-	addressGroup.Patch("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PatchAddress)
+	addressGroup := a.Group(
+		"/address/:action/:item_id",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	addressGroup.Get("/", controllers.GetAddress)
+	addressGroup.Post("/", controllers.PostAddress)
+	addressGroup.Delete("/", controllers.DeleteAddress)
+	addressGroup.Patch("/", controllers.PatchAddress)
 
-	contactGroup := a.Group("/contact/:action/:item_id")
-	contactGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetContact)
-	contactGroup.Post("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PostContact)
-	contactGroup.Delete("/", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteContact)
-	contactGroup.Patch("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PatchContact)
+	contactGroup := a.Group(
+		"/contact/:action/:item_id",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	contactGroup.Get("/", controllers.GetContact)
+	contactGroup.Post("/", controllers.PostContact)
+	contactGroup.Delete("/", controllers.DeleteContact)
+	contactGroup.Patch("/", controllers.PatchContact)
 
-	workGroup := a.Group("/workplace/:action/:item_id")
-	workGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetWorkplace)
-	workGroup.Post("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PostWorkplace)
-	workGroup.Delete("/", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteWorkplace)
-	workGroup.Patch("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PatchWorkplace)
+	workGroup := a.Group(
+		"/workplace/:action/:item_id",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	workGroup.Get("/", controllers.GetWorkplace)
+	workGroup.Post("/", controllers.PostWorkplace)
+	workGroup.Delete("/", controllers.DeleteWorkplace)
+	workGroup.Patch("/", controllers.PatchWorkplace)
 
-	affilationGroup := a.Group("/affilation/:action/:item_id")
-	affilationGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetAffilation)
-	affilationGroup.Post("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PostAffilation)
-	affilationGroup.Delete("/", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteAffilation)
-	affilationGroup.Patch("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PatchAffilation)
+	affilationGroup := a.Group(
+		"/affilation/:action/:item_id",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	affilationGroup.Get("/", controllers.GetAffilation)
+	affilationGroup.Post("/", controllers.PostAffilation)
+	affilationGroup.Delete("/", controllers.DeleteAffilation)
+	affilationGroup.Patch("/", controllers.PatchAffilation)
 
-	relationGroup := a.Group("/relation/:action/:item_id")
-	relationGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetRelation)
-	relationGroup.Post("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PostRelation)
-	relationGroup.Delete("/", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteRelation)
-	relationGroup.Patch("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PatchRelation)
+	relationGroup := a.Group(
+		"/relation/:action/:item_id",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	relationGroup.Get("/", controllers.GetRelation)
+	relationGroup.Post("/", controllers.PostRelation)
+	relationGroup.Delete("/", controllers.DeleteRelation)
+	relationGroup.Patch("/", controllers.PatchRelation)
 
-	checkGroup := a.Group("/check/:action/:item_id")
-	checkGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetCheck)
-	checkGroup.Patch("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PatchCheck)
-	checkGroup.Delete("/", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteCheck)
+	checkGroup := a.Group(
+		"/check/:action/:item_id",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	checkGroup.Get("/", controllers.GetCheck)
+	checkGroup.Patch("/", controllers.PatchCheck)
+	checkGroup.Delete("/", controllers.DeleteCheck)
 
-	robotGroup := a.Group("/robot")
-	robotGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetRobot)
-	robotGroup.Post("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PostRobot)
-	robotGroup.Delete("/", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteRobot)
+	robotGroup := a.Group(
+		"/robot",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	robotGroup.Get("/", controllers.GetRobot)
+	robotGroup.Post("/", controllers.PostRobot)
+	robotGroup.Delete("/", controllers.DeleteRobot)
 
-	investigationGroup := a.Group("/investigation/:action/:item_id")
-	investigationGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetInvestigation)
-	investigationGroup.Post("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PostInvestigation)
-	investigationGroup.Patch("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PatchInvestigation)
-	investigationGroup.Delete("/", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteInvestigation)
+	investigationGroup := a.Group(
+		"/investigation/:action/:item_id",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	investigationGroup.Get("/", controllers.GetInvestigation)
+	investigationGroup.Post("/", controllers.PostInvestigation)
+	investigationGroup.Patch("/", controllers.PatchInvestigation)
+	investigationGroup.Delete("/", controllers.DeleteInvestigation)
 
-	poligrafGroup := a.Group("/poligraf/:action/:item_id")
-	poligrafGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetPoligraf)
-	poligrafGroup.Post("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PostPoligraf)
-	poligrafGroup.Patch("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PatchPoligraf)
-	poligrafGroup.Delete("/", middlewares.AuthRequired([]string{}, []string{}), controllers.DeletePoligraf)
+	poligrafGroup := a.Group(
+		"/poligraf/:action/:item_id",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	poligrafGroup.Get("/", controllers.GetPoligraf)
+	poligrafGroup.Post("/", controllers.PostPoligraf)
+	poligrafGroup.Patch("/", controllers.PatchPoligraf)
+	poligrafGroup.Delete("/", controllers.DeletePoligraf)
 
-	inquiryGroup := a.Group("/inquiry/:action/:item_id")
-	inquiryGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetInquiry)
-	inquiryGroup.Post("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PostInquiry)
-	inquiryGroup.Patch("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PatchInquiry)
-	inquiryGroup.Delete("/", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteInquiry)
+	inquiryGroup := a.Group(
+		"/inquiry/:action/:item_id",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	inquiryGroup.Get("/", controllers.GetInquiry)
+	inquiryGroup.Post("/", controllers.PostInquiry)
+	inquiryGroup.Patch("/", controllers.PatchInquiry)
+	inquiryGroup.Delete("/", controllers.DeleteInquiry)
 
-	fileGroup := a.Group("/file/:action/:item_id")
-	fileGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetFile)
-	fileGroup.Post("/", middlewares.AuthRequired([]string{}, []string{}), controllers.PostFile)
+	fileGroup := a.Group(
+		"/file/:action/:item_id",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
+	fileGroup.Get("/", controllers.GetFile)
+	fileGroup.Post("/", controllers.PostFile)
 }

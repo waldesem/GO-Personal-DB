@@ -9,8 +9,16 @@ import (
 
 func ConnectRoutes(a *fiber.App) {
 
-	a.Get("/connects/:page", middlewares.AuthRequired([]string{}, []string{}), controllers.GetConnects)
-	connectGroup := a.Group("/connect", middlewares.AuthRequired([]string{}, []string{}))
+	a.Get(
+		"/connects/:page",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+		controllers.GetConnects,
+	)
+
+	connectGroup := a.Group(
+		"/connect",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
 	connectGroup.Post("/", controllers.PostConnect)
 	connectGroup.Patch("/:action/:id", controllers.PatchConnect)
 	connectGroup.Delete("/:action/:id", controllers.DeleteConnect)
