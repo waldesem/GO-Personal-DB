@@ -15,6 +15,12 @@ import (
 	"backend/platform/database"
 )
 
+type UserData struct {
+	UserName string `json:"username"`
+	Password string `json:"password"`
+	NewPswd  string `json:"new_pswd"`
+}
+
 type Tokens struct {
 	Access  string
 	Refresh string
@@ -38,17 +44,13 @@ func GetLogin(c *fiber.Ctx) error {
 }
 
 func PostLogin(c *fiber.Ctx) error {
-	userdata := struct {
-		UserName string
-		Password string
-	}{}
+	var userdata UserData
 	if err := c.BodyParser(&userdata); err != nil {
 		log.Println(err)
 	}
 
 	db := database.OpenDb()
 	var user models.User
-	var result map[string]interface{}
 
 	db.
 		Preload("Roles").
@@ -71,21 +73,15 @@ func PostLogin(c *fiber.Ctx) error {
 				tokens.Refresh, _ = utils.GenerateNewRefreshToken()
 
 				if err != nil {
-					result = map[string]interface{}{
-						"message": "Denied",
-					}
+					return c.Status(200).JSON("Denied")
 				}
 				result := map[string]interface{}{
 					"message": "Authenticated",
 					"tokens":  tokens,
 				}
-
 				return c.Status(200).JSON(result)
 			}
-			result := map[string]interface{}{
-				"message": "Expired",
-			}
-			return c.Status(200).JSON(result)
+			return c.Status(200).JSON("Expired")
 		} else {
 			if user.Attempt < 9 {
 				user.Attempt++
@@ -95,18 +91,11 @@ func PostLogin(c *fiber.Ctx) error {
 			db.Save(&user)
 		}
 	}
-	result = map[string]interface{}{
-		"message": "Denied",
-	}
-	return c.Status(401).JSON(result)
+	return c.Status(401).JSON("Denied")
 }
 
 func PatchLogin(c *fiber.Ctx) error {
-	userdata := struct {
-		UserName string `json:"username"`
-		Password string `json:"password"`
-		NewPswd  string `json:"new_pswd"`
-	}{}
+	var userdata UserData
 	if err := c.BodyParser(&userdata); err != nil {
 		log.Println(err)
 	}
@@ -121,22 +110,13 @@ func PatchLogin(c *fiber.Ctx) error {
 		if utils.ComparePasswords(user.Password, userdata.Password) {
 			user.Password = utils.GeneratePassword(userdata.NewPswd)
 			if user.Password == nil {
-				result := map[string]interface{}{
-					"message": "Denied",
-				}
-				return c.Status(200).JSON(result)
+				return c.Status(200).JSON("Denied")
 			}
 			db.Save(&user)
-			result := map[string]interface{}{
-				"message": "Authenticated",
-			}
-			return c.Status(201).JSON(result)
+			return c.Status(201).JSON("Authenticated")
 		}
 	}
-	result := map[string]interface{}{
-		"message": "Denied",
-	}
-	return c.Status(200).JSON(result)
+	return c.Status(200).JSON("Denied")
 }
 
 // DeleteLogin deletes the login for a given user.

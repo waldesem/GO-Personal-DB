@@ -70,7 +70,9 @@ func PostUser(c *fiber.Ctx) error {
 	}
 
 	db := database.OpenDb()
-	db.Where("user_name LIKE ?", "%"+userdata.UserName+"%").First(&user)
+	db.
+		Where("user_name LIKE ?", "%"+userdata.UserName+"%").
+		First(&user)
 
 	if user.ID == 0 {
 		user.FullName = userdata.FullName
@@ -105,8 +107,8 @@ func PatchUser(c *fiber.Ctx) error {
 		user.UserName = userdata.UserName
 		user.Email = userdata.Email
 	}
-	db.Create(&user)
-	return c.Status(201).JSON(user)
+	db.Save(&user)
+	return c.Status(201).JSON("User updated")
 }
 
 func DeleteUser(c *fiber.Ctx) error {
