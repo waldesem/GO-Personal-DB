@@ -26,7 +26,6 @@ require (
 
 require (
 	github.com/andybalholm/brotli v1.0.6 // indirect
-	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gofiber/contrib/jwt v1.0.8
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/google/uuid v1.5.0 // indirect

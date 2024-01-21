@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"regexp"
 	"strings"
 )
 
@@ -204,15 +203,14 @@ func JsonParse(jsonPath string) Anketa {
 	}
 }
 
-func trimmString(value string) string {
-	trimmed := strings.TrimSpace(value)
-	re := regexp.MustCompile(`\s+`)
-	return re.ReplaceAllString(trimmed, " ")
-}
-
 func (person Person) parseFullname() string {
-	name := fmt.Sprintf("%s %s %s", person.LastName, person.FirstName, person.MidName)
-	return strings.ToTitle(trimmString(name))
+	name := fmt.Sprintf(
+		"%s %s %s",
+		strings.TrimSpace(person.LastName),
+		strings.TrimSpace(person.FirstName),
+		strings.TrimSpace(person.MidName),
+	)
+	return strings.ToTitle(strings.TrimSpace(name))
 }
 
 func (person Person) parsePrevious() string {

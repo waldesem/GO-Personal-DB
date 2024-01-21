@@ -9,7 +9,10 @@ import (
 
 func MessageRoutes(a *fiber.App) {
 
-	messageGroup := a.Group("/messages", middlewares.AuthRequired([]string{}, []string{}))
+	messageGroup := a.Group(
+		"/messages",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
 	messageGroup.Delete("/:action/:id", controllers.DeleteMessage)
 	messageGroup.Get("/:action", controllers.GetMessages)
 }

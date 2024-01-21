@@ -18,7 +18,6 @@ func init() {
 }
 
 func main() {
-
 	// Define Fiber config.
 	config := configs.FiberConfig()
 
@@ -26,7 +25,14 @@ func main() {
 	app := fiber.New(config)
 
 	// Static files.
-	app.Static("/", "./static/index.html")
+	app.Static("/", "./static/",
+		fiber.Static{
+			Compress:  true,
+			ByteRange: true,
+			Browse:    true,
+			Index:     "index.html",
+		},
+	)
 
 	// Middlewares.
 	middlewares.FiberMiddleware(app)

@@ -18,7 +18,7 @@ func GetConnects(c *fiber.Ctx) error {
 	}
 	var pagination = 16
 	var hasPrev, hasNext bool
-	var connects []models.Connection
+	var connects, companies, cities []models.Connection
 
 	searchData := struct {
 		Search string `json:"search"`
@@ -26,14 +26,13 @@ func GetConnects(c *fiber.Ctx) error {
 	if err := c.BodyParser(&searchData); err != nil {
 		log.Println(err)
 	}
-	result := []interface{}{}
 
-	companies := db.
+	db.
 		Select("company").
-		Find(&connects)
-	cities := db.
+		Find(&companies)
+	db.
 		Select("city").
-		Find(&connects)
+		Find(&cities)
 
 	query := db.
 		Find(&connects).
@@ -41,19 +40,18 @@ func GetConnects(c *fiber.Ctx) error {
 		Offset(pagination * (intPage - 1))
 
 	if searchData.Search != "" {
-		query = query.Where("id = ?", searchData.Search)
+		query = query.Where("company = ?", searchData.Search)
 	}
-
-	query.Find(&result)
+	query.Find(&connects)
 
 	if intPage > 1 {
 		hasPrev = true
 	}
-	if len(result) == pagination {
+	if len(connects) == pagination {
 		hasNext = true
 	}
 	return c.JSON(fiber.Map{
-		"result":    result,
+		"result":    connects,
 		"hasNext":   hasNext,
 		"hasPrev":   hasPrev,
 		"companies": companies,
@@ -82,7 +80,10 @@ func PatchConnect(c *fiber.Ctx) error {
 		return c.Status(500).JSON(err)
 	}
 
-	db.Model(&connect).Where("id = ?", c.Params("item_id")).Updates(&connect)
+	db.
+		Model(&connect).
+		Where("id = ?", c.Params("item_id")).
+		Updates(&connect)
 
 	return c.Status(200).JSON("Updated")
 }

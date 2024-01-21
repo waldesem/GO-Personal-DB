@@ -9,7 +9,10 @@ import (
 
 func FileRoutes(a *fiber.App) {
 
-	managerGroup := a.Group("/manager", middlewares.AuthRequired([]string{}, []string{}))
+	managerGroup := a.Group(
+		"/manager",
+		middlewares.AuthRequired([]string{"user"}, []string{"staffsec"}),
+	)
 	managerGroup.Get("/", controllers.GetFiles)
 	managerGroup.Post("/:action", controllers.PostFiles)
 }

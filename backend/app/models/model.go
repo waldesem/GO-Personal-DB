@@ -12,30 +12,10 @@ type Group struct {
 	Users     []User `gorm:"many2many:user_groups;"`
 }
 
-func (group Group) GetID(name string) uint {
-	groupId := uint(0)
-	db := database.OpenDb()
-	db.Where(Group{NameGroup: name}).First(&group)
-	if group.NameGroup == name {
-		groupId = group.ID
-	}
-	return groupId
-}
-
 type Role struct {
 	ID       uint   `gorm:"primaryKey; autoIncrement; not null; unique" json:"id" serialize:"json"`
 	NameRole string `gorm:"size(256)" json:"role" serialize:"json"`
 	Users    []User `gorm:"many2many:user_roles;"`
-}
-
-func (role Role) GetID(name string) uint {
-	roleId := uint(0)
-	db := database.OpenDb()
-	db.Where(Role{NameRole: name}).First(&role)
-	if role.NameRole == name {
-		roleId = role.ID
-	}
-	return roleId
 }
 
 type User struct {
@@ -52,28 +32,6 @@ type User struct {
 	Groups    []Group   `gorm:"many2many:user_groups" json:"groups" serialize:"json"`
 	Roles     []Role    `gorm:"many2many:user_roles" json:"roles" serialize:"json"`
 	Messages  []Message
-}
-
-func (user User) HasGroup(groups []string) bool {
-	for _, g := range user.Groups {
-		for _, group := range groups {
-			if g.NameGroup == group {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (user User) HasRole(roles []string) bool {
-	for _, r := range user.Roles {
-		for _, role := range roles {
-			if r.NameRole == role {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 type Message struct {
