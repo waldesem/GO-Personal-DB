@@ -28,6 +28,7 @@ type User struct {
 	UpdatedAt time.Time `json:"updated" serialize:"json"`
 	LastLogin time.Time `json:"last_login" serialize:"json"`
 	Blocked   bool      `gorm:"default:false" json:"blocked" serialize:"json"`
+	Deleted   bool      `gorm:"default:false" json:"deleted" serialize:"json"`
 	Attempt   int       `gorm:"default:0" json:"attempt" serialize:"json"`
 	Groups    []Group   `gorm:"many2many:user_groups" json:"groups" serialize:"json"`
 	Roles     []Role    `gorm:"many2many:user_roles" json:"roles" serialize:"json"`

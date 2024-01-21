@@ -4,6 +4,13 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cache"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/csrf"
+	"github.com/gofiber/fiber/v2/middleware/favicon"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+
 	"github.com/joho/godotenv"
 
 	"backend/pkg/configs"
@@ -23,6 +30,12 @@ func main() {
 
 	// Define a new Fiber app with config.
 	app := fiber.New(config)
+	app.Use(cache.New())
+	app.Use(cors.New())
+	app.Use(csrf.New())
+	app.Use(favicon.New())
+	app.Use(recover.New())
+	app.Use(logger.New())
 
 	// Static files.
 	app.Static("/", "./static/",

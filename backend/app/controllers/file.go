@@ -28,28 +28,6 @@ func GetFiles(c *fiber.Ctx) error {
 	return DirsFilesList(c, file)
 }
 
-func DirsFilesList(c *fiber.Ctx, file File) error {
-
-	file.BasePath = os.Getenv("BASE_PATH") + "/"
-	currPath := filepath.Join(file.BasePath, filepath.Join(file.CurrentDir...))
-	listItems, err := os.ReadDir(currPath)
-	if err != nil {
-		return c.Status(500).JSON(err)
-	}
-
-	file.Dirs = make([]string, 0, len(listItems))
-	file.Files = make([]string, 0, len(listItems))
-
-	for _, item := range listItems {
-		if item.IsDir() {
-			file.Dirs = append(file.Dirs, item.Name())
-		} else {
-			file.Files = append(file.Files, item.Name())
-		}
-	}
-	return c.Status(200).JSON(file)
-}
-
 func PostFiles(c *fiber.Ctx) error {
 	file, resp := File{}, ResponseFileBody{}
 	err := c.BodyParser(&resp)
@@ -110,7 +88,7 @@ func PostFiles(c *fiber.Ctx) error {
 					return c.Status(500).JSON(err)
 				}
 			} else {
-				err = dirCopyMove(currPath, newPath, "copy")
+				err = CopyOrMoveDir(currPath, newPath, "copy")
 				if err != nil {
 					return c.Status(500).JSON(err)
 				}
@@ -135,7 +113,7 @@ func PostFiles(c *fiber.Ctx) error {
 					return c.Status(500).JSON(err)
 				}
 			} else {
-				err = dirCopyMove(currPath, newPath, "move")
+				err = CopyOrMoveDir(currPath, newPath, "move")
 				if err != nil {
 					return c.Status(500).JSON(err)
 				}
@@ -174,6 +152,28 @@ func PostFiles(c *fiber.Ctx) error {
 	return DirsFilesList(c, file)
 }
 
+func DirsFilesList(c *fiber.Ctx, file File) error {
+
+	file.BasePath = os.Getenv("BASE_PATH") + "/"
+	currPath := filepath.Join(file.BasePath, filepath.Join(file.CurrentDir...))
+	listItems, err := os.ReadDir(currPath)
+	if err != nil {
+		return c.Status(500).JSON(err)
+	}
+
+	file.Dirs = make([]string, 0, len(listItems))
+	file.Files = make([]string, 0, len(listItems))
+
+	for _, item := range listItems {
+		if item.IsDir() {
+			file.Dirs = append(file.Dirs, item.Name())
+		} else {
+			file.Files = append(file.Files, item.Name())
+		}
+	}
+	return c.Status(200).JSON(file)
+}
+
 func copyFile(src, dest string) error {
 	sourceFile, err := os.Open(src)
 	if err != nil {
@@ -198,28 +198,28 @@ func copyFile(src, dest string) error {
 	}
 	return nil
 }
-func dirCopyMove(src string, dest string, action string) error {
+
+func CopyOrMoveDir(src string, dest string, action string) error {
 	if err := os.MkdirAll(dest, os.ModePerm); err != nil {
 		return err
 	}
 
-	srcDir, err := os.ReadDir(src)
+	err := filepath.WalkDir(src, func(path string, info os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		relPath, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		destPath := filepath.Join(dest, relPath)
+		if info.IsDir() {
+			return os.MkdirAll(destPath, os.ModePerm)
+		}
+		return copyFile(path, destPath)
+	})
 	if err != nil {
 		return err
-	}
-
-	for _, f := range srcDir {
-		if f.IsDir() {
-			err = dirCopyMove(filepath.Join(src, f.Name()), filepath.Join(dest, f.Name()), action)
-			if err != nil {
-				return err
-			}
-		} else {
-			err = copyFile(filepath.Join(src, f.Name()), filepath.Join(dest, f.Name()))
-			if err != nil {
-				return err
-			}
-		}
 	}
 	if action == "move" {
 		if err := os.RemoveAll(src); err != nil {

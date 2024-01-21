@@ -1,11 +1,9 @@
 package controllers
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -131,7 +129,7 @@ func GetResume(c *fiber.Ctx) error {
 				Order("created_at desc").
 				First(&addr)
 
-			body := struct {
+			bodyStruct := struct {
 				Person models.Person
 				Docs   models.Document
 				Addr   models.Address
@@ -141,21 +139,23 @@ func GetResume(c *fiber.Ctx) error {
 				Addr:   addr,
 			}
 
-			jsonBody, err := json.Marshal(body)
+			jsonBody, err := json.Marshal(bodyStruct)
 			if err != nil {
 				return c.Status(500).JSON(err)
 			}
 
-			resp, err := http.Post("https://httpbin.org/post", "application/json", bytes.NewBuffer(jsonBody))
-			if err != nil {
-				return c.Status(500).JSON(err)
+			agent := fiber.Post("https://httpbin.org/get")
+			agent.Body(jsonBody)
+			statusCode, _, errs := agent.Bytes()
+			if len(errs) > 0 {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"errs": errs,
+				})
 			}
-			defer resp.Body.Close()
-
-			if resp.StatusCode != 200 {
+			if statusCode != 200 {
 				return c.Status(500).JSON(err)
 			} else {
-				person.StatusID = models.Status{}.GetID(utils.Statuses["robot"])
+				person.StatusID = models.Status{}.GetID(utils.Statuses["finish"])
 				db.Save(&person)
 				return c.Status(200).JSON(person)
 			}
@@ -810,17 +810,56 @@ func DeleteRobot(c *fiber.Ctx) error {
 
 func PostRobot(c *fiber.Ctx) error {
 	db := database.OpenDb()
+	tokenMeta, _ := middlewares.ExtractTokenMetadata(c)
 
-	var robot models.Robot
-	// var person models.Person
+	cand := models.Person{}
+	db.First(&cand, c.Params("item_id"))
 
-	err := c.BodyParser(&robot)
-	if err != nil {
-		return c.Status(500).JSON(err)
+	message := models.Message{}
+
+	status := models.Status{}
+	if cand.StatusID == status.GetID(utils.Statuses["robot"]) {
+		var robot models.Robot
+
+		err := c.BodyParser(&robot)
+		if err != nil {
+			return c.Status(500).JSON(err)
+		}
+		persIdStr := c.Params("item_id")
+		persId, err := strconv.ParseUint(persIdStr, 10, 64)
+		if err != nil {
+			return c.Status(500).JSON(err)
+		}
+		robot.PersonID = uint(persId)
+		db.Create(&robot)
+
+		robotPath := "/robots/" + cand.FullName + time.Now().Format("2006-01-02")
+		stat, err := os.Stat(robotPath)
+		if err == nil {
+			if stat.IsDir() {
+				candRobotPath := filepath.Join(cand.PathToDocs, "robots")
+				_, err := os.Stat(candRobotPath)
+				if os.IsNotExist(err) {
+					os.Mkdir(candRobotPath, os.ModePerm)
+				}
+				CopyOrMoveDir(robotPath, cand.PathToDocs, "move")
+			}
+		}
+
+		message.MessageContent = "Автоматическая проверка кандидата " + cand.FullName + " окончена"
+		message.UserID = tokenMeta.UserID
+		db.Create(&message)
+
+		cand.StatusID = status.GetID(utils.Statuses["reply"])
+		db.Save(&cand)
+
+		return c.Status(200).JSON("Created")
+	} else {
+		message.MessageContent = "Результат проверки {candidate.fullname} не может быть записан"
+		message.UserID = tokenMeta.UserID
+		db.Create(&message)
+		return c.Status(404).JSON("Not found")
 	}
-
-	db.Create(&robot)
-	return c.Status(200).JSON("Created")
 }
 
 // Investigations Handlers

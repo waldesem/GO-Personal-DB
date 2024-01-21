@@ -21,7 +21,9 @@ type Userdata struct {
 func GetUsers(c *fiber.Ctx) error {
 	db := database.OpenDb()
 	var users []models.User
-	db.Find(&users)
+	db.
+		Where("deleted = ?", false).
+		Find(&users)
 
 	result, err := json.Marshal(&users)
 
@@ -116,7 +118,8 @@ func DeleteUser(c *fiber.Ctx) error {
 
 	db := database.OpenDb()
 	db.First(&user, c.Params("id"))
-	db.Delete(&user)
+	user.Deleted = true
+	db.Save(&user)
 
 	return c.Status(204).JSON("User deleted")
 }
