@@ -40,7 +40,6 @@ func main() {
 	// Static files.
 	app.Static("/", "./static/",
 		fiber.Static{
-			Compress:  true,
 			ByteRange: true,
 			Browse:    true,
 			Index:     "index.html",

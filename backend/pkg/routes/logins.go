@@ -9,11 +9,11 @@ import (
 
 func LoginRoutes(a *fiber.App) {
 
-	loginGroup := a.Group("/login")
-	loginGroup.Get("/", middlewares.AuthRequired([]string{}, []string{}), controllers.GetLogin)
-	loginGroup.Post("/", controllers.PostLogin)
-	loginGroup.Patch("/", controllers.PatchLogin)
-	loginGroup.Delete("/", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteLogin)
+	a.Get("/login", middlewares.AuthRequired([]string{}, []string{}), controllers.GetLogin)
+	a.Get("/login", middlewares.AuthRequired([]string{}, []string{}), controllers.GetLogin)
+	a.Post("/login", controllers.PostLogin)
+	a.Patch("/login", controllers.PatchLogin)
+	a.Delete("/login", middlewares.AuthRequired([]string{}, []string{}), controllers.DeleteLogin)
 
 	a.Post("/refresh", controllers.RefreshToken)
 }

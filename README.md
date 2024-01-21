@@ -26,6 +26,7 @@ sudo systemctl enable postgresql.service
 Creating the PostgreSQL Database and User
 ```
 sudo -iu postgres psql
+DROP DATABASE personal;
 CREATE DATABASE personal;
 CREATE USER flask WITH PASSWORD 'fiber';
 GRANT ALL PRIVILEGES ON DATABASE personal TO fiber;

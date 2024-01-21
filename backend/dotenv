@@ -1,8 +1,8 @@
 SERVER_READ_TIMEOUT=60
 
 DHOST="localhost"
-DUSER="fiber"
-DPASSWORD="fiber"
+DUSER="flask"
+DPASSWORD="flask"
 DBNAME="personal"
 DPORT="5432"
 

@@ -10,16 +10,15 @@ import (
 )
 
 func OpenDb() *gorm.DB {
-
-	host, _ := os.LookupEnv("DBHOST")
-	usr, _ := os.LookupEnv("DBUSER")
-	pwd, _ := os.LookupEnv("DBPASSWORD")
-	name, _ := os.LookupEnv("DBNAME")
-	port, _ := os.LookupEnv("DBPORT")
+	dbhost, _ := os.LookupEnv("DBHOST")
+	dbusr, _ := os.LookupEnv("DBUSER")
+	dbpwd, _ := os.LookupEnv("DBPASSWORD")
+	dbname, _ := os.LookupEnv("DBNAME")
+	dbport, _ := os.LookupEnv("DBPORT")
 
 	var dsn = fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		host, usr, pwd, name, port,
+		dbhost, dbusr, dbpwd, dbname, dbport,
 	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

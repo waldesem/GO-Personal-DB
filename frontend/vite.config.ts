@@ -16,5 +16,8 @@ export default defineConfig({
   build: {
     outDir: '../backend/app/static',
     emptyOutDir: true
+  },
+  define: {
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'true'
   }
 })

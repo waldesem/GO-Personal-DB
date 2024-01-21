@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 
 	"backend/app/models"
@@ -14,12 +15,15 @@ import (
 )
 
 func main() {
+	if err := godotenv.Load("/home/semenenko/go/src/StaffSec2/backend/.env"); err != nil {
+		log.Print("No .env file found")
+	}
 	app := &cli.App{
 		Name:  "staffsec",
 		Usage: "Command line interface for StaffSec",
 		Commands: []*cli.Command{
 			{
-				Name:  "create",
+				Name:  "createdb",
 				Usage: "Create database and default data",
 				Action: func(c *cli.Context) error {
 					createDefault()
