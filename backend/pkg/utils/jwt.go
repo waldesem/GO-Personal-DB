@@ -11,8 +11,8 @@ import (
 )
 
 func GenerateNewAccessToken(user *models.User) (string, error) {
-	secret, _ := os.LookupEnv("JWT_SECRET_KEY")
-	exp, _ := os.LookupEnv("JWT_SECRET_KEY_EXPIRE_MINUTES_COUNT")
+	secret := os.Getenv("JWT_SECRET_KEY")
+	exp := os.Getenv("JWT_SECRET_KEY_EXPIRE_MINUTES_COUNT")
 	minutesCount, _ := strconv.Atoi(exp)
 
 	var roles []string
@@ -47,8 +47,8 @@ func GenerateNewAccessToken(user *models.User) (string, error) {
 }
 
 func GenerateNewRefreshToken() (string, error) {
-	secret, _ := os.LookupEnv("JWT_REFRESH_KEY")
-	exp, _ := os.LookupEnv("JWT_REFRESH_KEY_EXPIRE_HOURS_COUNT")
+	secret := os.Getenv("JWT_REFRESH_KEY")
+	exp := os.Getenv("JWT_REFRESH_KEY_EXPIRE_HOURS_COUNT")
 	minutesCount, _ := strconv.Atoi(exp)
 
 	claims := jwt.MapClaims{}

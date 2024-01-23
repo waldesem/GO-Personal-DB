@@ -37,7 +37,7 @@ func FiberMiddleware(a *fiber.App) {
 }
 
 func AuthRequired(roles []string, groups []string) func(*fiber.Ctx) error {
-	secret, _ := os.LookupEnv("JWT_SECRET_KEY")
+	secret := os.Getenv("JWT_SECRET_KEY")
 	config := jwtMiddleware.Config{
 		SigningKey:   jwtMiddleware.SigningKey{Key: []byte(secret)},
 		ContextKey:   "jwt",
@@ -173,6 +173,6 @@ func jwtError(c *fiber.Ctx, err error) error {
 }
 
 func jwtKeyFunc(token *jwt.Token) (interface{}, error) {
-	secret, _ := os.LookupEnv("JWT_SECRET_KEY")
+	secret := os.Getenv("JWT_SECRET_KEY")
 	return []byte(secret), nil
 }

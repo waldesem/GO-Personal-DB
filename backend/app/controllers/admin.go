@@ -48,10 +48,7 @@ func GetUser(c *fiber.Ctx) error {
 			user.Blocked = !user.Blocked
 		}
 	case "drop":
-		pswd, ok := os.LookupEnv("DEFAULT_PASSWORD")
-		if !ok {
-			return c.Status(500).JSON(ok)
-		}
+		pswd := os.Getenv("DEFAULT_PASSWORD")
 		user.Password = utils.GeneratePassword(pswd)
 	}
 	db.Save(&user)
@@ -80,10 +77,7 @@ func PostUser(c *fiber.Ctx) error {
 		user.FullName = userdata.FullName
 		user.UserName = userdata.UserName
 		user.Email = userdata.Email
-		pswd, ok := os.LookupEnv("DEFAULT_PASSWORD")
-		if !ok {
-			return c.Status(500).JSON(ok)
-		}
+		pswd := os.Getenv("DEFAULT_PASSWORD")
 		user.Password = utils.GeneratePassword(pswd)
 
 	} else {

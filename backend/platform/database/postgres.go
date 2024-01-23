@@ -10,11 +10,11 @@ import (
 )
 
 func OpenDb() *gorm.DB {
-	dbhost, _ := os.LookupEnv("DBHOST")
-	dbusr, _ := os.LookupEnv("DBUSER")
-	dbpwd, _ := os.LookupEnv("DBPASSWORD")
-	dbname, _ := os.LookupEnv("DBNAME")
-	dbport, _ := os.LookupEnv("DBPORT")
+	dbhost := os.Getenv("DBHOST")
+	dbusr := os.Getenv("DBUSER")
+	dbpwd := os.Getenv("DBPASSWORD")
+	dbname := os.Getenv("DBNAME")
+	dbport := os.Getenv("DBPORT")
 
 	var dsn = fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
