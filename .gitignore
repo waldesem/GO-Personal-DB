@@ -20,5 +20,8 @@
 # Go workspace file
 go.work
 
-StaffSec2.code-workspace
+# Env file
 .env
+
+# User files
+StaffSec2.code-workspace
